@@ -11,6 +11,7 @@ export async function POST(req: Request) {
 
     // Create a trace for this chat session
     const traceId = randomUUID();
+    console.log('calling gpt5 with traceId: ', traceId);
     
     const systemPrompt = "You are a helpful AI assistant. Provide clear, helpful, and accurate responses to user questions.";
 
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
     });
 
     const result = await streamText({
-      model: openai('gpt-5-nano'),
+      model: openai('gpt-5-mini'),
       system: systemPrompt,
       messages: convertToModelMessages(messages),
       experimental_telemetry: {
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
         metadata: {
           langfuseTraceId: traceId,
         },
-      },
+      }
     });
 
     return result.toUIMessageStreamResponse({

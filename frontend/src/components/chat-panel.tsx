@@ -79,6 +79,15 @@ export function ChatPanel() {
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                const trimmed = input.trim();
+                if (!trimmed || status !== "ready") return;
+                sendMessage({ text: trimmed });
+                setInput("");
+              }
+            }}
             placeholder="Type your message..."
             className="flex-1 min-h-[2.5rem] max-h-32 resize-none"
             rows={2}
