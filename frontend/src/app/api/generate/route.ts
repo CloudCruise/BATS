@@ -1,8 +1,9 @@
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, writeFile, readdir, stat } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
+import { fetchAndCompilePrompt } from "@/lib/langfuse";
 
 export const runtime = "nodejs";
 
@@ -76,12 +77,16 @@ export async function POST(req: Request) {
     let htmlContent: string | undefined;
     try {
       const model = openai("gpt-5-nano");
+      // Fetch system prompt from Langfuse Prompt Management (text prompt)
+      const systemPrompt = await fetchAndCompilePrompt("generate-website").catch(() =>
+        "You produce a single self-contained HTML file for browser-agent testing. Include minimal CSS and JavaScript. Prefer inline scripts and styles. Avoid external dependencies. Ensure the page loads without network access."
+      );
       const { text } = await generateText({
         model,
-        system:
-          "You produce a single self-contained HTML file for browser-agent testing. Include minimal CSS and JavaScript. Prefer inline scripts and styles. Avoid external dependencies. Ensure the page loads without network access.",
+        system: systemPrompt,
         prompt:
           `Create an HTML test page for the following scenario. The page should contain clear interactive elements with stable selectors (ids or data-testid) and at least one non-deterministic or delayed UI event (like a popup or modal). Scenario: ${prompt}`,
+        experimental_telemetry: { isEnabled: true },
       });
       // Heuristic: ensure we have full HTML markup; if model returned partial, wrap it
       const normalized = text.trim();
@@ -109,6 +114,42 @@ export async function POST(req: Request) {
     console.error("/api/generate error", err);
     return new Response(JSON.stringify({ error: "Failed to generate" }), {
       status: 500,
+      headers: { "content-type": "application/json" },
+    });
+  }
+}
+
+export async function GET() {
+  try {
+    const dir = path.join(process.cwd(), "public", "generated_websites");
+    const entries = await readdir(dir, { withFileTypes: true });
+    const htmlFiles = entries.filter((entry) => entry.isFile() && entry.name.endsWith(".html"));
+
+    if (htmlFiles.length === 0) {
+      return new Response(JSON.stringify({ urls: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    const filesWithTimes = await Promise.all(
+      htmlFiles.map(async (file) => {
+        const fullPath = path.join(dir, file.name);
+        const fileStat = await stat(fullPath);
+        return { name: file.name, mtimeMs: fileStat.mtimeMs };
+      })
+    );
+
+    filesWithTimes.sort((a, b) => b.mtimeMs - a.mtimeMs);
+    const urls = filesWithTimes.map((f) => `/generated_websites/${f.name}`);
+
+    return new Response(JSON.stringify({ urls }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  } catch {
+    return new Response(JSON.stringify({ urls: [] }), {
+      status: 200,
       headers: { "content-type": "application/json" },
     });
   }

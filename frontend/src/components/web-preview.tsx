@@ -46,8 +46,8 @@ export function WebPreviewNavigation({ className, children, ...props }: WebPrevi
   );
 }
 
-export type WebPreviewUrlProps = ComponentProps<typeof Input>;
-export function WebPreviewUrl({ value, onChange, onKeyDown, ...props }: WebPreviewUrlProps) {
+export type WebPreviewUrlProps = ComponentProps<typeof Input> & { src?: string };
+export function WebPreviewUrl({ value, src, onChange, onKeyDown, ...props }: WebPreviewUrlProps) {
   const { url, setUrl } = useWebPreview();
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
@@ -61,7 +61,7 @@ export function WebPreviewUrl({ value, onChange, onKeyDown, ...props }: WebPrevi
     <Input
       className="flex-1 h-8 text-sm"
       placeholder="Enter URL..."
-      value={value ?? url}
+      value={value ?? src ?? url}
       onChange={onChange}
       onKeyDown={handleKeyDown}
       {...props}

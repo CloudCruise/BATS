@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
- 
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -38,7 +38,7 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 }
- 
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -73,7 +73,7 @@
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
 }
- 
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -112,7 +112,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
- 
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -130,7 +130,7 @@
     padding-left: 1rem;
     padding-right: 1rem;
   }
-  
+
   @media (min-width: 640px) {
     .container {
       max-width: 640px;
@@ -138,13 +138,13 @@
       padding-right: 2rem;
     }
   }
-  
+
   @media (min-width: 768px) {
     .container {
       max-width: 768px;
     }
   }
-  
+
   @media (min-width: 1024px) {
     .container {
       max-width: 1024px;
@@ -152,7 +152,7 @@
       padding-right: 4rem;
     }
   }
-  
+
   @media (min-width: 1280px) {
     .container {
       max-width: 1280px;
@@ -160,7 +160,7 @@
       padding-right: 5rem;
     }
   }
-  
+
   @media (min-width: 1536px) {
     .container {
       max-width: 1536px;

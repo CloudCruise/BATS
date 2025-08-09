@@ -8,9 +8,11 @@ type InitialPromptProps = {
   onChange: (value: string) => void;
   onGenerate: () => void;
   isLoading?: boolean;
+  existingUrl?: string | null;
+  onOpenExisting?: () => void;
 };
 
-export function InitialPrompt({ prompt, onChange, onGenerate, isLoading }: InitialPromptProps) {
+export function InitialPrompt({ prompt, onChange, onGenerate, isLoading, existingUrl, onOpenExisting }: InitialPromptProps) {
   return (
     <div className="min-h-screen relative">
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#0d1b2a] via-[#0f2742] to-[#1b1f3a]" />
@@ -39,10 +41,13 @@ export function InitialPrompt({ prompt, onChange, onGenerate, isLoading }: Initi
             rows={4}
             className="w-full bg-white/10 text-white placeholder:text-white/60"
           />
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-3">
             <Button onClick={onGenerate} disabled={isLoading}>
               {isLoading ? "Generating..." : "Generate website"}
             </Button>
+            {existingUrl ? (
+              <Button variant="secondary" onClick={onOpenExisting}>Open generated website</Button>
+            ) : null}
           </div>
         </div>
       </div>

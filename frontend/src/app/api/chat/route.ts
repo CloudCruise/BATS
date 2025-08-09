@@ -1,9 +1,9 @@
 import { openai } from '@ai-sdk/openai';
 import { streamText, convertToModelMessages } from 'ai';
-import { Langfuse } from 'langfuse';
+import { fetchAndCompilePrompt } from '@/lib/langfuse';
 import { randomUUID } from 'crypto';
 
-const langfuse = new Langfuse();
+// Using Langfuse prompt management via helper for text prompts
 
 export async function POST(req: Request) {
   try {
@@ -13,17 +13,11 @@ export async function POST(req: Request) {
     const traceId = randomUUID();
     console.log('calling gpt5 with traceId: ', traceId);
     
-    const systemPrompt = "You are a helpful AI assistant. Provide clear, helpful, and accurate responses to user questions.";
+    const systemPrompt = await fetchAndCompilePrompt("chat-system").catch(() =>
+      "You are a helpful AI assistant. Provide clear, helpful, and accurate responses to user questions."
+    );
 
-    // Create a Langfuse trace
-    langfuse.trace({
-      id: traceId,
-      name: 'chat-session',
-      metadata: {
-        messageCount: messages.length,
-      },
-      tags: ['chat'],
-    });
+    // Note: if using Langfuse tracing, wire it here with your preferred client
 
     const result = await streamText({
       model: openai('gpt-5-mini'),
@@ -40,9 +34,7 @@ export async function POST(req: Request) {
 
     return result.toUIMessageStreamResponse({
       originalMessages: messages,
-      onFinish: () => {
-        langfuse.flushAsync().catch(console.error);
-      },
+      onFinish: () => {},
     });
   } catch (error) {
     console.error('Chat API error:', error);
