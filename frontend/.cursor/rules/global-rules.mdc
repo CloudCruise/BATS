@@ -1,0 +1,32 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+## Framework
+
+- Next.js
+- App router
+
+## File Structure
+
+- We generally put all code related to a net-new feature into a folder within `frontend/app/`
+- Check out other features to learn about the common structure
+- Name new files in camelCase.
+- Do not use components in the /src/components/ai-elements folder, but use it as inspiration in designing new components.
+
+## Components
+
+- We use Shadcn/ui
+  - Components in `@/components/ui`
+  - If a component is not installed yet, ask the user to install it for you
+- When creating new custom components that generalize, we add them with a generalizable naming to `@/components`
+
+## Styling
+
+- We use Tailwind CSS
+- We use a standard color palette which automatically handles light/dark mode
+- Follow the existing design system and color scheme
+- Do _not_ add comments to the code.
+- Avoid typing objects as any.
