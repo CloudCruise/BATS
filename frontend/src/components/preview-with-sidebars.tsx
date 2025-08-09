@@ -5,6 +5,7 @@ import { ChatPanel } from "@/components/chat-panel";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { WebPreview, WebPreviewBody, WebPreviewNavigation, WebPreviewUrl } from "@/components/web-preview";
 
 type SavedSite = { id: string; title: string; url: string; createdAt: number };
 
@@ -111,14 +112,21 @@ export function PreviewWithSidebars({ url, onBackToPrompt }: PreviewProps) {
         </button>
 
         <button
-          aria-label="Back to prompt"
+          aria-label="Generate new website"
           onClick={onBackToPrompt}
           className="absolute top-4 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-2 rounded-full border border-border bg-background/80 backdrop-blur px-3 py-2 text-sm"
         >
-          Back to prompt
+          Generate new website
         </button>
 
-        <iframe key={activeUrl} src={activeUrl} className="w-full h-full border-0" title="Generated website preview" />
+        <WebPreview defaultUrl={activeUrl} onUrlChange={(u) => setActiveUrl(u)}>
+          <WebPreviewNavigation>
+            <div className="flex-1">
+              <WebPreviewUrl />
+            </div>
+          </WebPreviewNavigation>
+          <WebPreviewBody />
+        </WebPreview>
       </div>
 
       {/* Right sidebar: chat */}

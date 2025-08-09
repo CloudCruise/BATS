@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Bot, Send, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { PromptInput, PromptTextarea, PromptToolbar, PromptSubmit } from "@/components/prompt-input";
 import { useChat, type UIMessage } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 
@@ -74,29 +73,21 @@ export function ChatPanel() {
           </div>
         )}
       </div>
-      <div className="p-4 border-t border-border">
-        <form onSubmit={handleSubmit} className="flex gap-2 items-end">
-          <Textarea
+      <div className="p-3 border-t border-border">
+        <PromptInput onSubmit={handleSubmit}>
+          <PromptTextarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                const trimmed = input.trim();
-                if (!trimmed || status !== "ready") return;
-                sendMessage({ text: trimmed });
-                setInput("");
-              }
-            }}
             placeholder="Type your message..."
-            className="flex-1 min-h-[2.5rem] max-h-32 resize-none"
-            rows={2}
             disabled={status !== "ready"}
           />
-          <Button type="submit" size="icon" disabled={!input.trim() || status !== "ready"}>
-            <Send className="w-4 h-4" />
-          </Button>
-        </form>
+          <PromptToolbar>
+            <div />
+            <PromptSubmit disabled={!input.trim() || status !== "ready"}>
+              <Send className="w-4 h-4" />
+            </PromptSubmit>
+          </PromptToolbar>
+        </PromptInput>
       </div>
     </div>
   );
