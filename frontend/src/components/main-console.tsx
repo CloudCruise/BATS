@@ -6,25 +6,23 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { ChatSidebar } from "@/components/chat-sidebar";
 import { WebPreview, WebPreviewBody, WebPreviewNavigation, WebPreviewUrl } from "@/components/web-preview";
+import { Button } from "@/components/ui/button";
+import { BotIcon } from "lucide-react";
 import { StreamingWebPreview } from "@/components/streaming-web-preview";
-
+import { UIMessage } from "@ai-sdk/react";
 
 type SavedSite = { id: string; title: string; url: string; createdAt: number };
 
 type MainConsoleProps = {
   initialUrl?: string;
   onBackToPrompt: () => void;
-  generationState?: {
-    isGenerating: boolean;
-    streamingHtml?: string;
-    streamingReasoning?: string;
-    title?: string;
-  };
+  messages?: UIMessage[];
+  isGenerating?: boolean;
 };
 
 const STORAGE_KEY = "bats:saved-sites";
 
-export function MainConsole({ initialUrl, onBackToPrompt, generationState }: MainConsoleProps) {
+export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGenerating = false }: MainConsoleProps) {
   const [rightOpen, setRightOpen] = useState(true);
   const [sites, setSites] = useState<SavedSite[]>([]);
   const [activeUrl, setActiveUrl] = useState(initialUrl || "");
@@ -92,6 +90,17 @@ export function MainConsole({ initialUrl, onBackToPrompt, generationState }: Mai
 
   const items = sites.map((s) => ({ name: s.title, url: s.url }));
 
+  const removeSite = (targetUrl: string) => {
+    setSites((prev) => {
+      const next = prev.filter((s) => s.url !== targetUrl);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      if (activeUrl === targetUrl) {
+        setActiveUrl(next[0]?.url ?? "");
+      }
+      return next;
+    });
+  };
+
   return (
     <SidebarProvider 
       style={{ 
@@ -99,24 +108,35 @@ export function MainConsole({ initialUrl, onBackToPrompt, generationState }: Mai
         "--sidebar-width": "260px" 
       } as React.CSSProperties}
     >
-      <AppSidebar variant="inset" items={items} activeUrl={activeUrl} onSelect={(u) => setActiveUrl(u)} />
+      <AppSidebar
+        variant="inset"
+        items={items}
+        activeUrl={activeUrl}
+        onSelect={(u) => setActiveUrl(u)}
+        onDelete={(u) => removeSite(u)}
+      />
       <SidebarInset>
         <SiteHeader onGenerateNew={onBackToPrompt} onToggleChat={() => setRightOpen((s) => !s)} isChatOpen={rightOpen} />
         <div className="flex flex-1 flex-col">
           <div className="flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 p-4 md:p-6">
               <div className="relative h-[calc(100vh-8rem)] rounded-lg border">
-                {generationState?.isGenerating ? (
+                {isGenerating ? (
                   <StreamingWebPreview
-                    title={generationState.title}
-                    code={generationState.streamingHtml}
-                    reasoning={generationState.streamingReasoning}
+                    messages={messages}
+                    isStreaming={isGenerating}
                   />
                 ) : (
                   <WebPreview defaultUrl={activeUrl} onUrlChange={(u) => setActiveUrl(u)} style={{ height: '100%' }}>
-                    <WebPreviewNavigation>
-                      <div className="flex-1">
+                    <WebPreviewNavigation className="justify-between">
+                      <div className="flex-1 min-w-0">
                         <WebPreviewUrl src={activeUrl} />
+                      </div>
+                      <div className="shrink-0 ml-2">
+                        <Button variant="outline" size="sm" type="button" className="whitespace-nowrap">
+                          <BotIcon className="w-4 h-4 mr-2" />
+                          Agent Mode
+                        </Button>
                       </div>
                     </WebPreviewNavigation>
                     <WebPreviewBody src={activeUrl} />
@@ -128,11 +148,15 @@ export function MainConsole({ initialUrl, onBackToPrompt, generationState }: Mai
         </div>
       </SidebarInset>
       {/* Right Sidebar */}
-      {rightOpen && (
-        <div className="border-l bg-background shadow-sm flex flex-col h-screen" style={{ width: "380px", minWidth: "380px" }}>
+      <div 
+        className={`border-l bg-background shadow-sm flex flex-col h-screen transition-all duration-300 ease-in-out overflow-hidden ${
+          rightOpen ? 'w-[380px] min-w-[380px]' : 'w-0 min-w-0'
+        }`}
+      >
+        <div className={`transition-opacity duration-300 ${rightOpen ? 'opacity-100' : 'opacity-0'}`}>
           <ChatSidebar open={rightOpen} currentUrl={activeUrl} />
         </div>
-      )}
+      </div>
     </SidebarProvider>
   );
 }

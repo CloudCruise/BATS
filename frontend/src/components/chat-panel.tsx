@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Send } from "lucide-react";
+// import { Send } from "lucide-react";
 import {
   PromptInput,
   PromptInputTextarea,
@@ -87,62 +87,63 @@ export function ChatPanel({ currentUrl }: ChatPanelProps) {
           <h2 className="text-lg font-semibold text-foreground">BATS Chat</h2>
         </div>
       </div>
-      
-      <Conversation>
-        <ConversationContent>
-          {messages.length === 0 && (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <p>Start a conversation with the AI assistant</p>
-            </div>
-          )}
-          {messages.map((message: UIMessage) => (
-            <Message from={message.role} key={message.id}>
-              <MessageContent>
-                {message.role === 'user' ? (
-                  // For user messages, extract just the user question part
-                  <Response>
-                    {(() => {
-                      const textPart = message.parts?.[0];
-                      const text = (textPart && 'text' in textPart) ? textPart.text || '' : '';
-                      if (text.includes('User question: ')) {
-                        return text.split('User question: ')[1] || text;
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <Conversation>
+          <ConversationContent>
+            {messages.length === 0 && (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                <p>Start a conversation with the AI assistant</p>
+              </div>
+            )}
+            {messages.map((message: UIMessage) => (
+              <Message from={message.role} key={message.id}>
+                <MessageContent>
+                  {message.role === 'user' ? (
+                    // For user messages, extract just the user question part
+                    <Response>
+                      {(() => {
+                        const textPart = message.parts?.[0];
+                        const text = (textPart && 'text' in textPart) ? textPart.text || '' : '';
+                        if (text.includes('User question: ')) {
+                          return text.split('User question: ')[1] || text;
+                        }
+                        return text;
+                      })()}
+                    </Response>
+                  ) : (
+                    // For assistant messages, render parts normally
+                    message.parts?.map((part, i) => {
+                      switch (part.type) {
+                        case 'text':
+                          return (
+                            <Response key={`${message.id}-${i}`}>
+                              {'text' in part ? part.text : ''}
+                            </Response>
+                          );
+                        case 'reasoning':
+                          return (
+                            <Reasoning
+                              key={`${message.id}-${i}`}
+                              className="w-full"
+                              isStreaming={status === 'streaming' && i === (message.parts?.length || 1) - 1}
+                            >
+                              <ReasoningTrigger />
+                              <ReasoningContent>{'text' in part ? part.text : ''}</ReasoningContent>
+                            </Reasoning>
+                          );
+                        default:
+                          return null;
                       }
-                      return text;
-                    })()}
-                  </Response>
-                ) : (
-                  // For assistant messages, render parts normally
-                  message.parts?.map((part, i) => {
-                    switch (part.type) {
-                      case 'text':
-                        return (
-                          <Response key={`${message.id}-${i}`}>
-                            {'text' in part ? part.text : ''}
-                          </Response>
-                        );
-                      case 'reasoning':
-                        return (
-                          <Reasoning
-                            key={`${message.id}-${i}`}
-                            className="w-full"
-                            isStreaming={status === 'streaming' && i === (message.parts?.length || 1) - 1}
-                          >
-                            <ReasoningTrigger />
-                            <ReasoningContent>{'text' in part ? part.text : ''}</ReasoningContent>
-                          </Reasoning>
-                        );
-                      default:
-                        return null;
-                    }
-                  })
-                )}
-              </MessageContent>
-            </Message>
-          ))}
-          {status === 'streaming' && <Loader />}
-        </ConversationContent>
-        <ConversationScrollButton />
-      </Conversation>
+                    })
+                  )}
+                </MessageContent>
+              </Message>
+            ))}
+            {status === 'streaming' && <Loader />}
+          </ConversationContent>
+          <ConversationScrollButton />
+        </Conversation>
+      </div>
 
       <div className="p-4 border-t border-border">
         <PromptInput onSubmit={handleSubmit} className="relative">
@@ -153,6 +154,7 @@ export function ChatPanel({ currentUrl }: ChatPanelProps) {
             disabled={status !== "ready"}
             minHeight={48}
             maxHeight={120}
+            className="pr-12"
           />
           <PromptInputToolbar>
             <PromptInputSubmit 

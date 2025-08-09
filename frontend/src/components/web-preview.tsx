@@ -62,7 +62,7 @@ export function WebPreviewUrl({ value, src, onChange, onKeyDown, className, ...p
   const currentValue = value ?? src ?? url;
 
   return (
-    <div className="relative flex-1">
+    <div className="relative w-full">
       <a
         href={currentValue}
         target="_blank"

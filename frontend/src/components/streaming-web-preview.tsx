@@ -1,136 +1,113 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo } from "react"
 import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning"
+import { UIMessage } from "@ai-sdk/react"
 
 type StreamingWebPreviewProps = {
+  messages: UIMessage[]
+  isStreaming?: boolean
   title?: string
-  code?: string
-  reasoning?: string
-  speed?: number // ms per character
 }
 
 export function StreamingWebPreview({
+  messages,
+  isStreaming = false,
   title = "Generating website...",
-  code = "",
-  reasoning = "",
-  speed = 12,
 }: StreamingWebPreviewProps) {
-  const [cursor, setCursor] = useState(0)
-  const [done, setDone] = useState(false)
-  const [isRealStreaming, setIsRealStreaming] = useState(false)
-  const timerRef = useRef<number | null>(null)
-  const previousCodeLength = useRef(0)
 
-  const chars = useMemo(() => code.split(""), [code])
-  const displayed = useMemo(() => {
-    // If we're getting real streaming data, show it directly
-    if (isRealStreaming) {
-      return code;
-    }
-    // Otherwise use the simulated streaming effect
-    return chars.slice(0, cursor).join("");
-  }, [chars, cursor, code, isRealStreaming])
+  function extractHtmlOnly(raw: string): string {
+    if (!raw) return "";
+    let t = raw.replace(/```html\s*/gi, "").replace(/```/g, "");
+    const doctypeIdx = t.search(/<!doctype html>/i);
+    const htmlIdx = t.search(/<html[\s>]/i);
+    const start = doctypeIdx >= 0 ? doctypeIdx : htmlIdx;
+    if (start < 0) return "";
+    t = t.slice(start);
+    const end = t.search(/<\/html>/i);
+    if (end >= 0) t = t.slice(0, end + "</html>".length);
+    return t.trim();
+  }
 
-  // Detect if we're receiving real streaming data
-  useEffect(() => {
-    if (code.length > previousCodeLength.current && code.length > 0) {
-      setIsRealStreaming(true)
-      setDone(false)
-      // Reset cursor when we start getting real streaming
-      if (previousCodeLength.current === 0) {
-        setCursor(0)
-      }
-    }
-    previousCodeLength.current = code.length
-  }, [code])
+  function extractFallbackReasoning(raw: string): string {
+    if (!raw) return "";
+    const m = raw.match(/^\s*REASONING[\s\S]*?(?=<!doctype html>|<html)/i);
+    return m ? m[0].trim() : "";
+  }
 
-  // Reset state when code changes (new generation starts)
-  useEffect(() => {
-    if (code === "" || code.length === 0) {
-      setCursor(0)
-      setDone(false)
-      setIsRealStreaming(false)
-      previousCodeLength.current = 0
-    }
-  }, [code])
+  // Extract reasoning content from messages (structured parts)
+  const reasoningContent = useMemo(() => {
+    const assistantMessages = messages.filter((m) => m.role === "assistant");
+    const lastMessage = assistantMessages[assistantMessages.length - 1];
+    if (!lastMessage?.parts) return "";
+    const reasoningParts = lastMessage.parts.filter((part) => part.type === "reasoning");
+    return reasoningParts.map((part) => ("text" in part ? part.text : "")).join("");
+  }, [messages]);
 
-  // Handle simulated streaming when we have complete code but not real streaming
-  useEffect(() => {
-    if (isRealStreaming) {
-      return // Don't simulate if we're getting real streaming
-    }
+  // Extract HTML content and compute fallback reasoning from text parts
+  const { htmlContent, fallbackReasoning } = useMemo(() => {
+    const assistantMessages = messages.filter((m) => m.role === "assistant");
+    const lastMessage = assistantMessages[assistantMessages.length - 1];
+    if (!lastMessage?.parts) return { htmlContent: "", fallbackReasoning: "" };
+    const textParts = lastMessage.parts.filter((part) => part.type === "text");
+    const rawText = textParts
+      .map((part) => ("text" in part ? part.text : ""))
+      .join("");
+    return {
+      htmlContent: extractHtmlOnly(rawText),
+      fallbackReasoning: extractFallbackReasoning(rawText),
+    };
+  }, [messages]);
 
-    if (cursor >= chars.length && chars.length > 0) {
-      setDone(true)
-      return
-    }
-    
-    if (chars.length > 0) {
-      timerRef.current = window.setInterval(() => {
-        setCursor((c) => Math.min(c + Math.max(1, Math.round(3 * Math.random())), chars.length))
-      }, speed)
-      return () => {
-        if (timerRef.current) window.clearInterval(timerRef.current)
-      }
-    }
-  }, [cursor, chars.length, speed, isRealStreaming])
-
-  // Mark as done when real streaming appears to be complete
-  useEffect(() => {
-    if (isRealStreaming && code.length > 0) {
-      // Use a timeout to detect when streaming has stopped
-      const timeoutId = setTimeout(() => {
-        if (code.includes('</html>')) {
-          setDone(true)
-        }
-      }, 1000)
-      
-      return () => clearTimeout(timeoutId)
-    }
-  }, [code, isRealStreaming])
+  // Check if we have any content to show
+  const hasReasoning = reasoningContent.length > 0 || fallbackReasoning.length > 0;
+  const hasHtml = htmlContent.length > 0;
 
   const lines = useMemo(() => {
-    if (!displayed && !isRealStreaming) {
+    if (!htmlContent) {
       return ["Connecting to AI model...", "Initializing generation...", ""];
     }
-    return displayed.split("\n");
-  }, [displayed, isRealStreaming])
+    return htmlContent.split("\n");
+  }, [htmlContent]);
 
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Header */}
       <div className="flex items-center gap-3 border-b p-4 bg-muted/30">
-        <Loader2 className={`h-5 w-5 ${done ? "" : "animate-spin"}`} />
+        <Loader2 className={`h-5 w-5 ${!isStreaming ? "" : "animate-spin"}`} />
         <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
-        {!done && (
+        {isStreaming && (
           <Button 
             variant="ghost" 
             size="sm" 
             className="ml-auto rounded-full" 
-            onClick={() => setCursor(chars.length)}
+            disabled
           >
-            Skip
+            Generating...
           </Button>
         )}
       </div>
 
-      {/* Reasoning Section */}
-      {reasoning && (
-        <div className="p-4 border-b bg-muted/10">
-          <Reasoning isStreaming={!done && reasoning.length > 0} defaultOpen={true}>
+      {/* Reasoning Section - Stacked on top */}
+      {hasReasoning && (
+        <div className="border-b bg-muted/10 p-4">
+          <Reasoning 
+            isStreaming={isStreaming && (reasoningContent.length > 0 || fallbackReasoning.length > 0)} 
+            defaultOpen={true}
+            className="w-full"
+          >
             <ReasoningTrigger />
-            <ReasoningContent>{reasoning}</ReasoningContent>
+            <ReasoningContent>{reasoningContent || fallbackReasoning}</ReasoningContent>
           </Reasoning>
         </div>
       )}
 
-      {/* Code display */}
+      {/* HTML Code Section - Takes remaining space */}
       <div className="flex-1 p-4 overflow-hidden">
         <div className="h-full rounded-xl border bg-muted/30 p-4 overflow-auto relative">
-          {!displayed && !isRealStreaming ? (
+          {!hasHtml ? (
             // Loading state with hardcoded message
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin mb-4" />
@@ -152,7 +129,7 @@ export function StreamingWebPreview({
                 </div>
               ))}
               {/* Blinking cursor effect during streaming */}
-              {!done && isRealStreaming && (
+              {isStreaming && hasHtml && (
                 <div className="contents">
                   <div className="select-none text-muted-foreground/60 pr-2 text-right w-8">
                     {lines.length + 1}
