@@ -56,15 +56,18 @@ export function AppSidebar({ items, activeUrl, onSelect, onDelete, onCleanup, cl
                     aria-label="Delete"
                     title="Delete"
                     onClick={async (e) => {
+                      e.preventDefault();
                       e.stopPropagation();
+                      // Optimistically update UI
+                      onDelete?.(item.url);
                       try {
                         await fetch(`/api/generate`, {
                           method: "DELETE",
                           headers: { "content-type": "application/json" },
                           body: JSON.stringify({ url: item.url }),
                         });
-                      } finally {
-                        onDelete?.(item.url);
+                      } catch {
+                        // swallow errors; UI already updated
                       }
                     }}
                   >

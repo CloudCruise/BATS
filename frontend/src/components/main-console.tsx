@@ -17,6 +17,7 @@ type MainConsoleProps = {
   generationState?: {
     isGenerating: boolean;
     streamingHtml?: string;
+    streamingReasoning?: string;
     title?: string;
   };
 };
@@ -109,6 +110,7 @@ export function MainConsole({ initialUrl, onBackToPrompt, generationState }: Mai
                   <StreamingWebPreview
                     title={generationState.title}
                     code={generationState.streamingHtml}
+                    reasoning={generationState.streamingReasoning}
                   />
                 ) : (
                   <WebPreview defaultUrl={activeUrl} onUrlChange={(u) => setActiveUrl(u)} style={{ height: '100%' }}>

@@ -57,8 +57,8 @@ export function PreviewWithSidebars({ url, onBackToPrompt }: PreviewProps) {
     setSites((prev) => {
       const next = prev.filter((s) => s.url !== targetUrl);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      if (activeUrl === targetUrl && next.length > 0) {
-        setActiveUrl(next[0].url);
+      if (activeUrl === targetUrl) {
+        setActiveUrl(next[0]?.url ?? url);
       }
       return next;
     });
@@ -79,14 +79,16 @@ export function PreviewWithSidebars({ url, onBackToPrompt }: PreviewProps) {
         <div className="flex-1 overflow-hidden">
           <div className="relative h-full rounded-lg border">
             <WebPreview defaultUrl={activeUrl} onUrlChange={(u) => setActiveUrl(u)} style={{ height: '100%' }}>
-              <WebPreviewNavigation>
+              <WebPreviewNavigation className="justify-between">
                 <div className="flex-1 min-w-0">
                   <WebPreviewUrl src={activeUrl} />
                 </div>
-                <Button variant="outline" size="sm" className="ml-2 whitespace-nowrap shrink-0" type="button">
-                  <BotIcon className="w-4 h-4 mr-2" />
-                  Agent Mode
-                </Button>
+                <div className="shrink-0 ml-2">
+                  <Button variant="outline" size="sm" className="whitespace-nowrap" type="button">
+                    <BotIcon className="w-4 h-4 mr-2" />
+                    Agent Mode
+                  </Button>
+                </div>
               </WebPreviewNavigation>
               <WebPreviewBody src={activeUrl} />
             </WebPreview>
