@@ -1,4 +1,4 @@
-import { mkdir, writeFile, readdir, stat } from "fs/promises";
+import { mkdir, writeFile, readdir, stat, unlink } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { generateText } from "ai";
@@ -9,101 +9,111 @@ export const runtime = "nodejs";
 
 type GenerateRequestBody = {
   prompt?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  websiteType?: 'insurance' | 'healthcare' | 'ecommerce' | 'banking' | 'education' | 'government' | 'travel' | 'real-estate' | 'generic';
 };
 
-function buildFallbackHtml(userPrompt: string): string {
-  const safePrompt = (userPrompt || "").slice(0, 2000);
-  return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Generated Test Site</title>
-    <style>
-      :root { color-scheme: light dark; }
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; }
-      header { padding: 16px 24px; border-bottom: 1px solid #ddd; }
-      main { padding: 24px; max-width: 900px; margin: 0 auto; }
-      .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin-top: 16px; }
-      button { padding: 10px 14px; border-radius: 10px; border: 1px solid #888; cursor: pointer; }
-    </style>
-  </head>
-  <body>
-    <header>
-      <strong>Generated test site</strong>
-    </header>
-    <main>
-      <h1>Scenario</h1>
-      <p>This page was generated for the scenario:</p>
-      <div class="card" id="scenario">${safePrompt || "No prompt provided."}</div>
-      <div class="card">
-        <h2>Interactions</h2>
-        <p>Includes a delayed, unexpected popup to challenge browser agents.</p>
-        <button id="start">Start flow</button>
-        <button id="maybe">Maybe later</button>
-      </div>
-    </main>
-    <script>
-      // Random delay to simulate unpredictability
-      function randomDelay(msMin, msMax) { return Math.floor(Math.random() * (msMax - msMin + 1)) + msMin; }
-      const start = document.getElementById('start');
-      const maybe = document.getElementById('maybe');
-      let timer;
-      function schedulePopup() {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-          alert('Unexpected popup: Please confirm to continue.');
-          const div = document.createElement('div');
-          div.textContent = 'Popup acknowledged at ' + new Date().toLocaleTimeString();
-          div.setAttribute('data-popup-ack', 'true');
-          document.body.appendChild(div);
-        }, randomDelay(800, 3500));
-      }
-      start.addEventListener('click', schedulePopup);
-      maybe.addEventListener('mouseover', schedulePopup);
-      // Also trigger once after load
-      window.addEventListener('load', () => setTimeout(schedulePopup, 1000));
-    </script>
-  </body>
-</html>`;
-}
+
 
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as GenerateRequestBody;
     const prompt = (body?.prompt || "").trim();
+    const difficulty = body?.difficulty || 'medium';
+    const websiteType = body?.websiteType || 'generic';
 
-    // Try LLM first; if not configured, fall back to template
-    let htmlContent: string | undefined;
-    try {
-      const model = openai("gpt-5-nano");
-      // Fetch system prompt from Langfuse Prompt Management (text prompt)
+    // Generate HTML using AI model
+    const model = openai("gpt-5-mini");
+    
+    // Create dynamic system prompt based on difficulty and website type
+      const getDifficultyInstructions = (diff: string) => {
+        switch (diff) {
+          case 'easy':
+            return `Create a simple, clean website with minimal elements (3-5 interactive components). Use basic styling and straightforward interactions. Include 1-2 simple UI challenges like a basic popup or form validation.`;
+          case 'hard':
+            return `Create a complex, feature-rich website with many interactive elements (15+ components). Use advanced styling, multiple sections, dynamic content, nested forms, modals, dropdowns, carousels, and complex user flows. Include 4-6 challenging UI scenarios like delayed popups, multi-step processes, dynamic content loading, and unpredictable interface changes.`;
+          default: // medium
+            return `Create a moderately complex website with several interactive elements (8-12 components). Use good styling and multiple sections. Include 2-4 UI challenges like modals, form interactions, and timed events.`;
+        }
+      };
+
+      const getWebsiteTypeInstructions = (type: string) => {
+        switch (type) {
+          case 'insurance':
+            return `Style as an insurance website with professional blue/gray colors, policy forms, quote calculators, claim submission forms, and coverage comparison tables.`;
+          case 'healthcare':
+            return `Style as a healthcare website with clean white/blue colors, appointment booking, patient forms, symptom checkers, and medical information sections.`;
+          case 'ecommerce':
+            return `Style as an e-commerce website with product catalogs, shopping cart, checkout forms, product filters, reviews, and promotional banners.`;
+          case 'banking':
+            return `Style as a banking website with secure-looking design, account login forms, transaction tables, loan calculators, and financial tools.`;
+          case 'education':
+            return `Style as an educational website with course catalogs, enrollment forms, student portals, assignment submissions, and academic calendars.`;
+          case 'government':
+            return `Style as a government website with official styling, permit applications, service forms, document uploads, and bureaucratic workflows.`;
+          case 'travel':
+            return `Style as a travel website with booking forms, destination galleries, itinerary builders, review systems, and travel planning tools.`;
+          case 'real-estate':
+            return `Style as a real estate website with property listings, search filters, contact forms, virtual tour buttons, and mortgage calculators.`;
+          default: // generic
+            return `Use a clean, modern design with neutral colors and standard web components.`;
+        }
+      };
+
       const systemPrompt = await fetchAndCompilePrompt("generate-website").catch(() =>
-        "You produce a single self-contained HTML file for browser-agent testing. Include minimal CSS and JavaScript. Prefer inline scripts and styles. Avoid external dependencies. Ensure the page loads without network access."
-      );
-      const { text } = await generateText({
-        model,
-        system: systemPrompt,
-        prompt:
-          `Create an HTML test page for the following scenario. The page should contain clear interactive elements with stable selectors (ids or data-testid) and at least one non-deterministic or delayed UI event (like a popup or modal). Scenario: ${prompt}`,
-        experimental_telemetry: { isEnabled: true },
-      });
-      // Heuristic: ensure we have full HTML markup; if model returned partial, wrap it
-      const normalized = text.trim();
-      if (/<!doctype html>/i.test(normalized) || /<html[\s>]/i.test(normalized)) {
-        htmlContent = normalized;
-      } else {
-        htmlContent = buildFallbackHtml(prompt);
+        `You produce a single self-contained HTML file for browser-agent testing. Include minimal CSS and JavaScript. Prefer inline scripts and styles. Avoid external dependencies. Ensure the page loads without network access.
+
+${getDifficultyInstructions(difficulty)}
+
+${getWebsiteTypeInstructions(websiteType)}
+
+CRITICAL: Output ONLY the HTML code. Do not include any reasoning, explanations, or commentary. Start directly with <!doctype html> and end with </html>. No markdown code blocks or other formatting.`
+    );
+    
+    const { text } = await generateText({
+      model,
+      system: systemPrompt,
+      prompt:
+        `Create an HTML test page for the following scenario. The page should contain clear interactive elements with stable selectors (ids or data-testid) and at least one non-deterministic or delayed UI event (like a popup or modal). Scenario: ${prompt}`,
+      experimental_telemetry: { isEnabled: true },
+    });
+    
+    // Filter out any reasoning traces and extract only HTML content
+    let cleanedText = text.trim();
+    
+    // Remove markdown code blocks if present
+    cleanedText = cleanedText.replace(/```html\s*/gi, '').replace(/```\s*$/g, '');
+    cleanedText = cleanedText.replace(/```[\s\S]*?```/g, '');
+    
+    // Remove reasoning sections that might be wrapped in XML-like tags
+    cleanedText = cleanedText.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, '');
+    cleanedText = cleanedText.replace(/<think>[\s\S]*?<\/think>/gi, '');
+    
+    // Remove any text before the DOCTYPE or HTML tag
+    const docTypeMatch = cleanedText.match(/(<!doctype html>[\s\S]*)/i);
+    if (docTypeMatch) {
+      cleanedText = docTypeMatch[1];
+    } else {
+      // Look for HTML tag start and extract from there to end
+      const htmlTagMatch = cleanedText.match(/(<html[\s\S]*)/i);
+      if (htmlTagMatch) {
+        cleanedText = htmlTagMatch[1];
       }
-    } catch {
-      htmlContent = buildFallbackHtml(prompt);
     }
+    
+    // If the text contains both reasoning and HTML, try to extract just the HTML part
+    const htmlMatch = cleanedText.match(/<!doctype html>[\s\S]*?<\/html>/i);
+    if (htmlMatch) {
+      cleanedText = htmlMatch[0];
+    }
+    
+    const htmlContent = cleanedText.trim();
 
     const id = randomUUID();
     const dir = path.join(process.cwd(), "public", "generated_websites");
     const filePath = path.join(dir, `${id}.html`);
     await mkdir(dir, { recursive: true });
-    await writeFile(filePath, htmlContent!, "utf8");
+    await writeFile(filePath, htmlContent, "utf8");
 
     const relativeUrl = `/generated_websites/${id}.html`;
     return new Response(JSON.stringify({ url: relativeUrl }), {
@@ -150,6 +160,55 @@ export async function GET() {
   } catch {
     return new Response(JSON.stringify({ urls: [] }), {
       status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const contentType = req.headers.get("content-type") || "";
+    let url: string | undefined;
+    if (contentType.includes("application/json")) {
+      const body = (await req.json()) as { url?: string };
+      url = body?.url;
+    } else {
+      const { searchParams } = new URL(req.url);
+      url = searchParams.get("url") ?? undefined;
+    }
+
+    if (!url) {
+      return new Response(JSON.stringify({ error: "Missing url" }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    // Only allow deletions inside public/generated_websites
+    const dir = path.join(process.cwd(), "public", "generated_websites");
+    const cleaned = url.replace(/^https?:\/\/[^/]+/, "");
+    const candidate = path.join(process.cwd(), "public", cleaned);
+    const isInside = candidate.startsWith(dir + path.sep) || candidate === dir;
+    if (!isInside || !candidate.endsWith(".html")) {
+      return new Response(JSON.stringify({ error: "Invalid path" }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    try {
+      await unlink(candidate);
+    } catch {
+      // Ignore if already deleted
+    }
+
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: "Failed to delete" }), {
+      status: 500,
       headers: { "content-type": "application/json" },
     });
   }

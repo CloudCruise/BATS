@@ -169,3 +169,102 @@
     }
   }
 }
+
+/* Flying bats animation */
+@keyframes flyAcross {
+  0% {
+    transform: translateX(-100px) translateY(0px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(calc(100vw + 100px)) translateY(-50px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes flyDiagonal {
+  0% {
+    transform: translateX(-100px) translateY(100vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(calc(100vw + 100px)) translateY(-100px) rotate(-360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes flyLoop {
+  0% {
+    transform: translateX(50vw) translateY(20vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  25% {
+    transform: translateX(80vw) translateY(30vh) rotate(90deg);
+  }
+  50% {
+    transform: translateX(70vw) translateY(60vh) rotate(180deg);
+  }
+  75% {
+    transform: translateX(20vw) translateY(40vh) rotate(270deg);
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(50vw) translateY(20vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.bat-animation {
+  position: absolute;
+  font-size: 2rem;
+  user-select: none;
+  z-index: 1;
+}
+
+.bat-1 {
+  animation: flyAcross 15s infinite linear;
+  animation-delay: 0s;
+  top: 20%;
+}
+
+.bat-2 {
+  animation: flyDiagonal 20s infinite linear;
+  animation-delay: 5s;
+  font-size: 1.5rem;
+}
+
+.bat-3 {
+  animation: flyAcross 18s infinite linear;
+  animation-delay: 10s;
+  top: 60%;
+  font-size: 2.5rem;
+}
+
+.bat-4 {
+  animation: flyLoop 25s infinite ease-in-out;
+  animation-delay: 7s;
+  font-size: 1.8rem;
+}
+
+.bat-5 {
+  animation: flyDiagonal 22s infinite linear;
+  animation-delay: 12s;
+  font-size: 1.2rem;
+}

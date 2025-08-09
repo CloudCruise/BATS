@@ -8,13 +8,17 @@ export default function Home() {
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGenerate = async (prompt: string) => {
+  const handleGenerate = async (prompt: string, difficulty?: string, websiteType?: string) => {
     setIsLoading(true);
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ 
+          prompt, 
+          difficulty: difficulty || 'medium', 
+          websiteType: websiteType || 'generic' 
+        }),
       });
       const data = (await res.json()) as { url?: string };
       if (data?.url) setGeneratedUrl(data.url);

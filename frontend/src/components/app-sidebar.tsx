@@ -1,6 +1,6 @@
 "use client";
 
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarSeparator, useSidebar } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarInset, SidebarMenu, SidebarMenuAction, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarSeparator, useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { FilesIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,13 @@ export type AppSidebarProps = {
   items: AppSidebarItem[];
   activeUrl?: string | null;
   onSelect?: (url: string) => void;
+  onDelete?: (url: string) => void;
   onCleanup?: () => void;
   className?: string;
   variant?: "sidebar" | "floating" | "inset";
 };
 
-export function AppSidebar({ items, activeUrl, onSelect, onCleanup, className, variant = "inset" }: AppSidebarProps) {
+export function AppSidebar({ items, activeUrl, onSelect, onDelete, onCleanup, className, variant = "inset" }: AppSidebarProps) {
   return (
     <Sidebar variant={variant} collapsible="icon" className={className}>
       <SidebarRail />
@@ -51,6 +52,24 @@ export function AppSidebar({ items, activeUrl, onSelect, onCleanup, className, v
                     <FilesIcon className="w-4 h-4" />
                     <span>{item.name}</span>
                   </SidebarMenuButton>
+                  <SidebarMenuAction
+                    aria-label="Delete"
+                    title="Delete"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        await fetch(`/api/generate`, {
+                          method: "DELETE",
+                          headers: { "content-type": "application/json" },
+                          body: JSON.stringify({ url: item.url }),
+                        });
+                      } finally {
+                        onDelete?.(item.url);
+                      }
+                    }}
+                  >
+                    <Trash2Icon className="w-4 h-4" />
+                  </SidebarMenuAction>
                 </SidebarMenuItem>
               ))
             )}
