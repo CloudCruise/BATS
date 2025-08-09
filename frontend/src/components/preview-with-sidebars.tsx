@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { WebPreview, WebPreviewBody, WebPreviewNavigation, WebPreviewUrl } from "@/components/web-preview";
+import { Button } from "@/components/ui/button";
+import { BotIcon } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/site-header";
@@ -78,9 +80,13 @@ export function PreviewWithSidebars({ url, onBackToPrompt }: PreviewProps) {
           <div className="relative h-full rounded-lg border">
             <WebPreview defaultUrl={activeUrl} onUrlChange={(u) => setActiveUrl(u)} style={{ height: '100%' }}>
               <WebPreviewNavigation>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <WebPreviewUrl src={activeUrl} />
                 </div>
+                <Button variant="outline" size="sm" className="ml-2 whitespace-nowrap shrink-0" type="button">
+                  <BotIcon className="w-4 h-4 mr-2" />
+                  Agent Mode
+                </Button>
               </WebPreviewNavigation>
               <WebPreviewBody src={activeUrl} />
             </WebPreview>

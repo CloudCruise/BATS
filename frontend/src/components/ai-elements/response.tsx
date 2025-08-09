@@ -245,7 +245,7 @@ const components: Options['components'] = {
   },
 };
 
-export const Response = memo(
+const ResponseComponent = memo(
   ({
     className,
     options,
@@ -287,5 +287,6 @@ export const Response = memo(
   (prevProps, nextProps) => prevProps.children === nextProps.children,
 );
 
-// Add display name for devtools and to satisfy certain linters
-(Response as unknown as { displayName?: string }).displayName = 'Response';
+ResponseComponent.displayName = 'Response';
+
+export const Response = ResponseComponent;

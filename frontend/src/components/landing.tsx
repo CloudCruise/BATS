@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ArrowUp } from "lucide-react";
 
 type SavedSite = { id: string; title: string; url: string; createdAt: number };
 
@@ -21,9 +22,7 @@ type LandingProps = {
 const STORAGE_KEY = "bats:saved-sites";
 
 export function Landing({ onGenerate, onOpenExisting, isLoading }: LandingProps) {
-  const [prompt, setPrompt] = useState(
-    "I want to build a website that throws an unexpected popup while my browser agent interacts with it"
-  );
+  const [prompt, setPrompt] = useState("");
   const [difficulty, setDifficulty] = useState<string>("medium");
   const [websiteType, setWebsiteType] = useState<string>("generic");
   const [savedSites, setSavedSites] = useState<SavedSite[]>([]);
@@ -78,7 +77,7 @@ export function Landing({ onGenerate, onOpenExisting, isLoading }: LandingProps)
         </div>
 
         <div className="w-full max-w-3xl flex flex-col gap-6 z-10">
-          <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8 shadow-2xl">
+          <div className="bg-white/5 backdrop-blur-sm rounded-3xl border border-white/10 p-4 md:p-6 shadow-2xl">
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -88,31 +87,34 @@ export function Landing({ onGenerate, onOpenExisting, isLoading }: LandingProps)
                   if (!isLoading) handleGenerate();
                 }
               }}
-              rows={4}
-              className="w-full bg-white/10 text-white placeholder:text-white/70 rounded-xl border border-white/20 p-4 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all duration-200 text-base leading-relaxed"
-              placeholder="Describe the website behavior you want to test..."
+              rows={1}
+              className="min-h-[48px] w-full resize-none bg-transparent px-1 py-2 text-base outline-none placeholder:text-white/70 text-white overflow-hidden"
+              placeholder="Ask BATS to build…"
+              style={{ height: 'auto' }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = target.scrollHeight + 'px';
+              }}
             />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              <div>
-                <label className="block text-sm font-medium text-white/90 mb-3">Difficulty Level</label>
+
+            {/* Bottom bar: two dropdowns on the left, send button on the right */}
+            <div className="mt-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
                 <Select value={difficulty} onValueChange={setDifficulty}>
-                  <SelectTrigger className="bg-white/10 border-white/20 text-white h-12 rounded-xl hover:bg-white/15 transition-colors">
-                    <SelectValue />
+                  <SelectTrigger className="h-9 rounded-xl bg-white/10 border-white/20 text-white hover:bg-white/15">
+                    <SelectValue placeholder="Difficulty" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="easy">🟢 Easy - Simple layout, few elements</SelectItem>
-                    <SelectItem value="medium">🟡 Medium - Standard complexity</SelectItem>
-                    <SelectItem value="hard">🔴 Hard - Complex, many interactions</SelectItem>
+                    <SelectItem value="easy">🟢 Easy</SelectItem>
+                    <SelectItem value="medium">🟡 Medium</SelectItem>
+                    <SelectItem value="hard">🔴 Hard</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-white/90 mb-3">Website Type</label>
+
                 <Select value={websiteType} onValueChange={setWebsiteType}>
-                  <SelectTrigger className="bg-white/10 border-white/20 text-white h-12 rounded-xl hover:bg-white/15 transition-colors">
-                    <SelectValue />
+                  <SelectTrigger className="h-9 rounded-xl bg-white/10 border-white/20 text-white hover:bg-white/15">
+                    <SelectValue placeholder="Type" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="generic">🌐 Generic</SelectItem>
@@ -127,25 +129,16 @@ export function Landing({ onGenerate, onOpenExisting, isLoading }: LandingProps)
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            
-            <div className="flex justify-center mt-8">
-              <Button 
-                onClick={handleGenerate} 
-                disabled={isLoading} 
-                size="lg"
-                className="px-8 py-3 text-lg font-medium bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+
+              <Button
+                type="button"
+                size="icon"
+                className="rounded-xl h-9 w-9 md:h-10 md:w-10 bg-white text-black hover:bg-white/90"
+                aria-label="Send"
+                disabled={isLoading || !prompt.trim()}
+                onClick={handleGenerate}
               >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    🚀 Generate website
-                  </>
-                )}
+                <ArrowUp className="h-5 w-5" />
               </Button>
             </div>
           </div>

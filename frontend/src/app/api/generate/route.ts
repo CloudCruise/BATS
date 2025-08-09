@@ -116,7 +116,7 @@ CRITICAL: Output ONLY the HTML code. Do not include any reasoning, explanations,
     await writeFile(filePath, htmlContent, "utf8");
 
     const relativeUrl = `/generated_websites/${id}.html`;
-    return new Response(JSON.stringify({ url: relativeUrl }), {
+    return new Response(JSON.stringify({ url: relativeUrl, html: htmlContent }), {
       status: 200,
       headers: { "content-type": "application/json" },
     });
