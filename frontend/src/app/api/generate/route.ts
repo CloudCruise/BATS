@@ -59,7 +59,7 @@ export async function POST(req: Request) {
       const userPrompt = `Create an HTML test page for the following scenario. The page should contain clear interactive elements with stable selectors (ids or data-testid) and at least one non-deterministic or delayed UI event (like a popup or modal). Scenario: ${prompt}`;
       
       const result = await streamText({
-        model: openai("gpt-5"),
+        model: openai("gpt-5-mini"),
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
         experimental_telemetry: { isEnabled: true },

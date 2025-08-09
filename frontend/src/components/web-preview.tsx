@@ -60,11 +60,12 @@ export function WebPreviewUrl({ value, src, onChange, onKeyDown, className, ...p
   };
 
   const currentValue = value ?? src ?? url;
+  const hrefValue = typeof currentValue === "string" && currentValue.length > 0 ? currentValue : undefined;
 
   return (
     <div className="relative w-full">
       <a
-        href={currentValue}
+        href={hrefValue}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Open in new tab"
@@ -77,6 +78,7 @@ export function WebPreviewUrl({ value, src, onChange, onKeyDown, className, ...p
         placeholder="Enter URL..."
         value={currentValue}
         onChange={onChange}
+        readOnly={!onChange}
         onKeyDown={handleKeyDown}
         {...props}
       />
@@ -89,7 +91,13 @@ export function WebPreviewBody({ className, loading, src, ...props }: WebPreview
   const { url } = useWebPreview();
   return (
     <div className="flex-1">
-      <iframe className={cn("size-full", className)} src={src ?? url} title="Preview" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation" {...props} />
+      <iframe
+        className={cn("size-full", className)}
+        src={src ?? (url || undefined)}
+        title="Preview"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+        {...props}
+      />
       {loading}
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Landing } from "@/components/landing";
 import { MainConsole } from "@/components/main-console";
 import { useChat } from "@ai-sdk/react";
@@ -12,6 +12,36 @@ export default function Home() {
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({ api: "/api/generate" }),
   });
+
+  useEffect(() => {
+    let stop = false;
+    let tries = 0;
+    const fetchLatestGenerated = async () => {
+      try {
+        const res = await fetch("/api/generate", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as { urls?: string[] };
+        const latest = data.urls?.[0];
+        if (latest) setGeneratedUrl(latest);
+        else if (!stop && tries < 10) {
+          tries += 1;
+          setTimeout(fetchLatestGenerated, 300);
+        }
+      } catch {
+        if (!stop && tries < 10) {
+          tries += 1;
+          setTimeout(fetchLatestGenerated, 300);
+        }
+      }
+    };
+
+    if (generatedUrl === "generating" && status === "ready") {
+      fetchLatestGenerated();
+    }
+    return () => {
+      stop = true;
+    };
+  }, [status, generatedUrl]);
 
   const handleGenerate = async (prompt: string, difficulty?: string, websiteType?: string) => {
     // Navigate to main console immediately
