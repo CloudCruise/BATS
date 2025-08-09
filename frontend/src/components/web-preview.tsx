@@ -40,7 +40,7 @@ export function WebPreview({ className, children, defaultUrl = "", onUrlChange, 
 export type WebPreviewNavigationProps = ComponentProps<"div">;
 export function WebPreviewNavigation({ className, children, ...props }: WebPreviewNavigationProps) {
   return (
-    <div className={cn("flex items-center gap-1 border-b p-2", className)} {...props}>
+    <div className={cn("flex items-center gap-1 border-b p-2 rounded-t-lg", className)} {...props}>
       {children}
     </div>
   );

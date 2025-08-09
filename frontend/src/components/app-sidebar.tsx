@@ -18,7 +18,7 @@ export function AppSidebar({ items, activeUrl, onSelect, className, variant = "i
   return (
     <Sidebar variant={variant} collapsible="icon" className={className}>
       <SidebarRail />
-      <SidebarContent>
+      <SidebarContent className="overflow-visible">
         <SidebarGroup>
           <SidebarGroupLabel>Websites</SidebarGroupLabel>
           <SidebarMenu>

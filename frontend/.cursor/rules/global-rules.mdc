@@ -14,7 +14,6 @@ alwaysApply: true
 - We generally put all code related to a net-new feature into a folder within `frontend/app/`
 - Check out other features to learn about the common structure
 - Name new files in camelCase.
-- Do not use components in the /src/components/ai-elements folder, but use it as inspiration in designing new components.
 
 ## Components
 
