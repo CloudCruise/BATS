@@ -5,11 +5,12 @@ import { ChatPanel } from "@/components/chat-panel";
 
 type ChatSidebarProps = {
   open: boolean;
+  currentUrl?: string;
 };
 
 const STORAGE_KEY = "bats:right-sidebar-width";
 
-export function ChatSidebar({ open }: ChatSidebarProps) {
+export function ChatSidebar({ open, currentUrl }: ChatSidebarProps) {
   const [widthPx, setWidthPx] = useState<number>(380);
   const dragStartX = useRef<number | null>(null);
   const dragStartWidth = useRef<number>(0);
@@ -61,7 +62,7 @@ export function ChatSidebar({ open }: ChatSidebarProps) {
         aria-hidden
       />
       <div className="h-full w-full">
-        <ChatPanel />
+        <ChatPanel currentUrl={currentUrl} />
       </div>
     </div>
   );

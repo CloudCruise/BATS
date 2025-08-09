@@ -3,6 +3,8 @@
 import { createContext, useContext, useState, type ComponentProps, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ExternalLinkIcon } from "lucide-react";
 
 export type WebPreviewContextValue = {
   url: string;
@@ -47,7 +49,7 @@ export function WebPreviewNavigation({ className, children, ...props }: WebPrevi
 }
 
 export type WebPreviewUrlProps = ComponentProps<typeof Input> & { src?: string };
-export function WebPreviewUrl({ value, src, onChange, onKeyDown, ...props }: WebPreviewUrlProps) {
+export function WebPreviewUrl({ value, src, onChange, onKeyDown, className, ...props }: WebPreviewUrlProps) {
   const { url, setUrl } = useWebPreview();
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
@@ -57,15 +59,28 @@ export function WebPreviewUrl({ value, src, onChange, onKeyDown, ...props }: Web
     onKeyDown?.(event);
   };
 
+  const currentValue = value ?? src ?? url;
+
   return (
-    <Input
-      className="flex-1 h-8 text-sm"
-      placeholder="Enter URL..."
-      value={value ?? src ?? url}
-      onChange={onChange}
-      onKeyDown={handleKeyDown}
-      {...props}
-    />
+    <div className="relative flex-1">
+      <a
+        href={currentValue}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Open in new tab"
+        className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+      >
+        <ExternalLinkIcon className="w-4 h-4" />
+      </a>
+      <Input
+        className={cn("h-8 text-sm pl-8", className)}
+        placeholder="Enter URL..."
+        value={currentValue}
+        onChange={onChange}
+        onKeyDown={handleKeyDown}
+        {...props}
+      />
+    </div>
   );
 }
 
@@ -77,6 +92,20 @@ export function WebPreviewBody({ className, loading, src, ...props }: WebPreview
       <iframe className={cn("size-full", className)} src={src ?? url} title="Preview" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation" {...props} />
       {loading}
     </div>
+  );
+}
+
+// Maintained for potential future external placement if needed
+export type WebPreviewOpenExternalProps = ComponentProps<typeof Button> & { href?: string };
+export function WebPreviewOpenExternal({ href, className, ...props }: WebPreviewOpenExternalProps) {
+  const { url } = useWebPreview();
+  const targetHref = href ?? url;
+  return (
+    <Button asChild variant="ghost" size="icon" className={cn("shrink-0", className)} {...props}>
+      <a href={targetHref} target="_blank" rel="noopener noreferrer" aria-label="Open in new tab">
+        <ExternalLinkIcon className="w-4 h-4" />
+      </a>
+    </Button>
   );
 }
 

@@ -21,11 +21,42 @@ export function MainConsole({ initialUrl, onBackToPrompt }: MainConsoleProps) {
   const [sites, setSites] = useState<SavedSite[]>([]);
   const [activeUrl, setActiveUrl] = useState(initialUrl);
 
+  // Function to validate if a URL still exists
+  const validateUrl = async (url: string): Promise<boolean> => {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  };
+
+  // Function to clean up broken URLs from localStorage
+  const cleanupBrokenUrls = async (sitesToCheck: SavedSite[]) => {
+    const validSites: SavedSite[] = [];
+    
+    for (const site of sitesToCheck) {
+      const isValid = await validateUrl(site.url);
+      if (isValid) {
+        validSites.push(site);
+      }
+    }
+    
+    // Update localStorage and state if any sites were removed
+    if (validSites.length !== sitesToCheck.length) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(validSites));
+      setSites(validSites);
+    }
+  };
+
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       try {
-        setSites(JSON.parse(raw));
+        const parsedSites = JSON.parse(raw) as SavedSite[];
+        setSites(parsedSites);
+        // Clean up broken URLs in the background
+        cleanupBrokenUrls(parsedSites);
       } catch {}
     }
   }, []);
@@ -81,7 +112,7 @@ export function MainConsole({ initialUrl, onBackToPrompt }: MainConsoleProps) {
       {/* Right Sidebar */}
       {rightOpen && (
         <div className="border-l bg-background shadow-sm flex flex-col h-screen" style={{ width: "380px", minWidth: "380px" }}>
-          <ChatSidebar open={rightOpen} />
+          <ChatSidebar open={rightOpen} currentUrl={activeUrl} />
         </div>
       )}
     </SidebarProvider>

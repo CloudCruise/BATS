@@ -16,7 +16,7 @@ export async function fetchAndCompilePrompt(
     promptVersion?: string;
   }
 ): Promise<string> {
-  const promptVersion = options?.promptVersion ?? process.env.NEXT_PUBLIC_LANGFUSE_PROMPT_VERSION ?? "latest";
+  const promptVersion = options?.promptVersion ?? "latest";
 
   const langfuse = new Langfuse();
   const fetched = await langfuse.getPrompt(promptId, undefined, { label: promptVersion });
