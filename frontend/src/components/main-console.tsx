@@ -39,6 +39,13 @@ export function MainConsole({
   const [sites, setSites] = useState<SavedSite[]>([]);
   const [activeUrl, setActiveUrl] = useState(initialUrl || "");
 
+  // Update activeUrl when initialUrl changes (e.g., after generation completes)
+  useEffect(() => {
+    if (initialUrl && initialUrl !== activeUrl) {
+      setActiveUrl(initialUrl);
+    }
+  }, [initialUrl, activeUrl]);
+
   // Function to validate if a URL still exists
   const validateUrl = async (url: string): Promise<boolean> => {
     try {

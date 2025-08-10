@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Landing } from "@/components/landing";
 import { MainConsole } from "@/components/main-console";
 import { useChat } from "@ai-sdk/react";
@@ -10,40 +10,36 @@ import { createUserPrompt } from "@/utils/prompt-enrichment";
 export default function Home() {
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
   const [initialPrompt, setInitialPrompt] = useState<string>("");
+  const isGeneratingRef = useRef(false);
 
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({ api: "/api/generate" }),
   });
 
+  // Watch for when generation completes
   useEffect(() => {
-    let stop = false;
-    let tries = 0;
-    const fetchLatestGenerated = async () => {
+    const fetchGeneratedUrl = async () => {
       try {
         const res = await fetch("/api/generate", { cache: "no-store" });
-        if (!res.ok) return;
-        const data = (await res.json()) as { urls?: string[] };
-        const latest = data.urls?.[0];
-        if (latest) setGeneratedUrl(latest);
-        else if (!stop && tries < 10) {
-          tries += 1;
-          setTimeout(fetchLatestGenerated, 300);
+        if (res.ok) {
+          const data = (await res.json()) as { urls?: string[] };
+          const latest = data.urls?.[0];
+          if (latest) {
+            setGeneratedUrl(latest);
+            isGeneratingRef.current = false;
+          }
         }
-      } catch {
-        if (!stop && tries < 10) {
-          tries += 1;
-          setTimeout(fetchLatestGenerated, 300);
-        }
+      } catch (error) {
+        console.error("Failed to fetch latest generated URL:", error);
       }
     };
 
-    if (generatedUrl === "generating" && status === "ready") {
-      fetchLatestGenerated();
+    // When status changes from streaming to ready, and we were generating
+    if (status === "ready" && isGeneratingRef.current) {
+      // Small delay to ensure file is written
+      setTimeout(fetchGeneratedUrl, 1000);
     }
-    return () => {
-      stop = true;
-    };
-  }, [status, generatedUrl]);
+  }, [status]);
 
   const handleGenerate = async (
     prompt: string,
@@ -55,6 +51,7 @@ export default function Home() {
 
     // Navigate to main console immediately
     setGeneratedUrl("generating");
+    isGeneratingRef.current = true;
 
     const userPrompt = createUserPrompt(
       prompt,
@@ -74,6 +71,7 @@ export default function Home() {
         onBackToPrompt={() => {
           setGeneratedUrl(null);
           setInitialPrompt("");
+          isGeneratingRef.current = false;
         }}
         messages={messages}
         isGenerating={status === "streaming"}

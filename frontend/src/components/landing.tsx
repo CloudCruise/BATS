@@ -14,18 +14,56 @@ import { ArrowUp } from "lucide-react";
 type SavedSite = { id: string; title: string; url: string; createdAt: number };
 
 type LandingProps = {
-  onGenerate: (prompt: string, difficulty?: string, websiteType?: string) => Promise<void>;
+  onGenerate: (
+    prompt: string,
+    difficulty?: string,
+    websiteType?: string
+  ) => Promise<void>;
   onOpenExisting: (url: string) => void;
   isLoading: boolean;
 };
 
 const STORAGE_KEY = "bats:saved-sites";
 
-export function Landing({ onGenerate, onOpenExisting, isLoading }: LandingProps) {
+const examplePrompts = [
+  "Create a login flow that triggers an unexpected dismissible popup after submit.",
+  "Add an unfamiliar custom input type (e.g., color or date-time-local) to a profile form.",
+  "Build a booking form that rejects incorrectly formatted dates and shows inline errors.",
+  "Design a checkout step where the credit card field lives inside an iframe {allow_iframes:true}.",
+  "Render a page where all form controls use scrambled ids and class names each load (stable data-testids only).",
+  "Use native selects for country and state pickers—no custom dropdowns.",
+  "Implement a legacy Select2-style dropdown with unusual keyboard behavior and delayed initialization.",
+  "Serve a page with unusual HTML (e.g., missing <body> tag) but functional inputs and buttons.",
+  "Add a simple captcha-lite that must be solved before the final submit button enables.",
+  "Hide crucial URLs in visually-hidden anchors; require the agent to read and use them.",
+  "Include both file upload (PDF) and a generated file download (CSV receipt) in the flow.",
+  "Use ambiguous menu naming (e.g., ‘Stuff’, ‘Things’, ‘More’) that still leads to correct sections.",
+  "Add tab management with multiple content tabs and require switching to complete a task.",
+  "List items in a paginated grid and require looping over each item to extract a field.",
+  "Combine: after login, open a surprise survey modal, then require selecting a native country select.",
+  "Combine: form with a date field (strict validation) and a legacy Select2 picker that loads late.",
+  "Combine: details inside an iframe plus a hidden link URL that must be extracted to proceed {allow_iframes:true}.",
+  "Combine: upload a file, process, then present a captcha-lite before allowing CSV download.",
+];
+
+export function Landing({
+  onGenerate,
+  onOpenExisting,
+  isLoading,
+}: LandingProps) {
   const [prompt, setPrompt] = useState("");
   const [difficulty, setDifficulty] = useState<string>("medium");
   const [websiteType, setWebsiteType] = useState<string>("generic");
   const [savedSites, setSavedSites] = useState<SavedSite[]>([]);
+
+  const [placeholderPrompt, setPlaceholderPrompt] = useState("");
+  const [currentExample, setCurrentExample] = useState(
+    Math.floor(Math.random() * examplePrompts.length)
+  );
+  const [
+    currentNumberOfExamplePromptCharactersShown,
+    setCurrentNumberOfExamplePromptCharactersShown,
+  ] = useState(0);
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -42,6 +80,24 @@ export function Landing({ onGenerate, onOpenExisting, isLoading }: LandingProps)
   };
 
   const hasExistingSites = savedSites.length > 0;
+
+  useEffect(() => {
+    // Typing effect for the example prompt
+    const examplePrompt = examplePrompts[currentExample];
+    const typingSpeed = 20; // Characters per second
+    const interval = setInterval(async () => {
+      setPlaceholderPrompt(
+        examplePrompt.slice(0, currentNumberOfExamplePromptCharactersShown)
+      );
+      setCurrentNumberOfExamplePromptCharactersShown((prev) => prev + 1);
+      if (currentNumberOfExamplePromptCharactersShown >= examplePrompt.length) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setCurrentExample(Math.floor(Math.random() * examplePrompts.length));
+        setCurrentNumberOfExamplePromptCharactersShown(0);
+      }
+    }, typingSpeed);
+    return () => clearInterval(interval);
+  }, [currentExample, currentNumberOfExamplePromptCharactersShown]);
 
   return (
     <div className="min-h-screen relative">
@@ -72,7 +128,8 @@ export function Landing({ onGenerate, onOpenExisting, isLoading }: LandingProps)
             <span className="text-6xl">🦇</span>
           </div>
           <p className="text-white/90 max-w-2xl text-lg leading-relaxed">
-            Describe a website scenario to test your browser agents, and we&apos;ll generate it locally for you to iterate on.
+            Describe a website scenario to test your browser agents, and
+            we&apos;ll generate it locally for you to iterate on.
           </p>
         </div>
 
@@ -89,12 +146,12 @@ export function Landing({ onGenerate, onOpenExisting, isLoading }: LandingProps)
               }}
               rows={1}
               className="min-h-[48px] w-full resize-none bg-transparent px-1 py-2 text-base outline-none placeholder:text-white/70 text-white overflow-hidden"
-              placeholder="Ask BATS to build…"
-              style={{ height: 'auto' }}
+              placeholder={placeholderPrompt}
+              style={{ height: "auto" }}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
-                target.style.height = 'auto';
-                target.style.height = target.scrollHeight + 'px';
+                target.style.height = "auto";
+                target.style.height = target.scrollHeight + "px";
               }}
             />
 
@@ -162,11 +219,17 @@ export function Landing({ onGenerate, onOpenExisting, isLoading }: LandingProps)
                       <div className="text-sm font-medium text-white truncate group-hover:text-blue-200 transition-colors">
                         {site.title}
                       </div>
-                      <div className="text-xs text-white/60 truncate mt-1">{site.url}</div>
+                      <div className="text-xs text-white/60 truncate mt-1">
+                        {site.url}
+                      </div>
                     </div>
                     <div className="text-xs text-white/50 ml-4 flex items-center gap-2">
-                      <span>{new Date(site.createdAt).toLocaleDateString()}</span>
-                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                      <span>
+                        {new Date(site.createdAt).toLocaleDateString()}
+                      </span>
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        →
+                      </span>
                     </div>
                   </button>
                 ))}
