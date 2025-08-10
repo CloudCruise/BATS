@@ -168,6 +168,7 @@ export class AgentRunner {
   private onUIMessages?: (messages: Array<{ id: string; role: 'assistant' | 'user'; parts: Array<{ type: string; text?: string }> }>) => void;
   private traceId: string | null = null;
   private executedToolCallKeys: Set<string> = new Set();
+  private toolMemory: Array<{ name: string; args: unknown; output?: unknown; error?: string; ts: number }> = [];
 
   constructor(page: PageAgent, continuous = false, onAction?: ActionCallback, onUIMessages?: (messages: Array<{ id: string; role: 'assistant' | 'user'; parts: Array<{ type: string; text?: string }> }>) => void) {
     this.page = page;
@@ -297,9 +298,33 @@ export class AgentRunner {
         : `Continue with objective: ${objective}. This is iteration ${i + 1} of ${iterations}.`;
       
       const snap = await this.page.snapshot();
-      this.messages = [
-        { role: "user", content: `Objective: ${iterationObjective}\n\nSnapshot:\n${snap.html.slice(0, 40000)}` },
-      ];
+
+      if (i === 0) {
+        this.messages = [];
+      } else {
+        // Keep only prior user messages (we don't persist assistant/tool arrays here)
+        this.messages = this.messages.filter((m) => m.role === 'user').slice(-4);
+      }
+
+      const recentTools = this.toolMemory.slice(-8);
+      const toolSummaryLines = recentTools.map((t) => {
+        const argsStr = (() => {
+          try { return JSON.stringify(t.args).slice(0, 400); } catch { return '"<unserializable>"'; }
+        })();
+        const outStr = t.error
+          ? `error: ${t.error}`
+          : (() => { try { return JSON.stringify(t.output).slice(0, 400); } catch { return '"<unserializable>"'; } })();
+        return `- ${t.name} ${argsStr} -> ${outStr}`;
+      }).join('\n');
+
+      const toolSummary = recentTools.length
+        ? `\nRecent tool results (last ${recentTools.length}):\n${toolSummaryLines}\n`
+        : '';
+
+      this.messages.push({
+        role: 'user',
+        content: `Objective update: ${iterationObjective}${toolSummary}\nSnapshot:\n${snap.html.slice(0, 40000)}`,
+      });
       
       // Emit reasoning action for this iteration
       const reasoningId = `reasoning-${i}-${Date.now()}`;
@@ -474,12 +499,14 @@ export class AgentRunner {
                 try {
                   const output = await this.page.runTool(call.name, call.args);
                   this.onAction?.({ id: toolId, type: 'tool', timestamp: new Date(), toolName: call.name, toolInput: call.args as Record<string, unknown>, toolOutput: output as Record<string, unknown>, state: 'completed' });
-                  this.messages.push({ role: 'assistant', content: [{ type: 'tool-call', toolCallId: toolId, toolName: call.name, input: call.args }] });
-                  this.messages.push({ role: 'tool', content: [{ type: 'tool-result', toolCallId: toolId, toolName: call.name, output }] });
+                  // Note: Do not append assistant/tool messages to this.messages in runIterations.
+                  // We supply prior tool context via a textual summary to avoid shape mismatches.
                   this.executedToolCallKeys.add(call.key);
+                  this.toolMemory.push({ name: call.name, args: call.args, output, ts: Date.now() });
                 } catch (err) {
                   this.onAction?.({ id: toolId, type: 'tool', timestamp: new Date(), toolName: call.name, toolInput: call.args as Record<string, unknown>, toolError: err instanceof Error ? err.message : 'Unknown error', state: 'error' });
                   this.executedToolCallKeys.add(call.key);
+                  this.toolMemory.push({ name: call.name, args: call.args, error: err instanceof Error ? err.message : 'Unknown error', ts: Date.now() });
                 }
               }
             }
@@ -507,12 +534,13 @@ export class AgentRunner {
                 try {
                   const output = await this.page.runTool(call.name, call.args);
                   this.onAction?.({ id: toolId, type: 'tool', timestamp: new Date(), toolName: call.name, toolInput: call.args as Record<string, unknown>, toolOutput: output as Record<string, unknown>, state: 'completed' });
-                  this.messages.push({ role: 'assistant', content: [{ type: 'tool-call', toolCallId: toolId, toolName: call.name, input: call.args }] });
-                  this.messages.push({ role: 'tool', content: [{ type: 'tool-result', toolCallId: toolId, toolName: call.name, output }] });
+                  // Do not append assistant/tool messages in runIterations; rely on textual summary.
                   this.executedToolCallKeys.add(call.key);
+                  this.toolMemory.push({ name: call.name, args: call.args, output, ts: Date.now() });
                 } catch (err) {
                   this.onAction?.({ id: toolId, type: 'tool', timestamp: new Date(), toolName: call.name, toolInput: call.args as Record<string, unknown>, toolError: err instanceof Error ? err.message : 'Unknown error', state: 'error' });
                   this.executedToolCallKeys.add(call.key);
+                  this.toolMemory.push({ name: call.name, args: call.args, error: err instanceof Error ? err.message : 'Unknown error', ts: Date.now() });
                 }
               }
             }
@@ -526,12 +554,13 @@ export class AgentRunner {
               try {
                 const output = await this.page.runTool(toolName, input);
                 this.onAction?.({ id: toolId, type: 'tool', timestamp: new Date(), toolName, toolInput: input, toolOutput: output as Record<string, unknown> | string | number | boolean | null, state: 'completed' });
-                this.messages.push({ role: 'assistant', content: [{ type: 'tool-call', toolCallId, toolName, input }] });
-                this.messages.push({ role: 'tool', content: [{ type: 'tool-result', toolCallId, toolName, output }] });
+                // Do not append assistant/tool messages in runIterations; rely on textual summary.
                 // Optionally, POST tool result if server session requires it
                 // await fetch('/api/agent/tool-result', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ toolCallId, toolName, output, traceId: this.traceId }) }).catch(() => null);
+                this.toolMemory.push({ name: toolName, args: input, output, ts: Date.now() });
               } catch (err) {
                 this.onAction?.({ id: toolId, type: 'tool', timestamp: new Date(), toolName, toolInput: input, toolError: err instanceof Error ? err.message : 'Unknown error', state: 'error' });
+                this.toolMemory.push({ name: toolName, args: input, error: err instanceof Error ? err.message : 'Unknown error', ts: Date.now() });
               }
             }
           } catch {
@@ -543,6 +572,12 @@ export class AgentRunner {
       // Small delay between iterations
       if (i < iterations - 1) {
         await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      // Prune message history to control token growth
+      const MAX_MSGS = 60;
+      if (this.messages.length > MAX_MSGS) {
+        this.messages = this.messages.slice(-MAX_MSGS);
       }
     }
     
