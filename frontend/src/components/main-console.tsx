@@ -242,17 +242,6 @@ export function MainConsole({
                         <div className="flex-1 min-w-0">
                           <WebPreviewUrl src={activeUrl} />
                         </div>
-                        <div className="shrink-0 ml-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            type="button"
-                            className="whitespace-nowrap"
-                          >
-                            <BotIcon className="w-4 h-4 mr-2" />
-                            Agent Mode
-                          </Button>
-                        </div>
                       </WebPreviewNavigation>
                       <WebPreviewBody src={activeUrl} ref={iframeRef} />
                     </WebPreview>
