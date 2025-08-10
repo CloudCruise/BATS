@@ -4,7 +4,6 @@ import {
   createContext,
   useContext,
   useState,
-  useEffect,
   type ComponentProps,
   type ReactNode,
 } from "react";
@@ -40,14 +39,6 @@ export function WebPreview({
   ...props
 }: WebPreviewProps) {
   const [url, setUrlState] = useState(defaultUrl);
-
-  // Update URL when defaultUrl changes
-  useEffect(() => {
-    if (defaultUrl && defaultUrl !== url) {
-      setUrlState(defaultUrl);
-    }
-  }, [defaultUrl, url]);
-
   const setUrl = (u: string) => {
     setUrlState(u);
     onUrlChange?.(u);
@@ -146,13 +137,11 @@ export function WebPreviewBody({
   ...props
 }: WebPreviewBodyProps) {
   const { url } = useWebPreview();
-  const finalSrc = src ?? (url || undefined);
-
   return (
     <div className="flex-1">
       <iframe
         className={cn("size-full", className)}
-        src={finalSrc}
+        src={src ?? (url || undefined)}
         title="Preview"
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
         {...props}
