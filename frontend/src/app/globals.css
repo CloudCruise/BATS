@@ -123,6 +123,15 @@
 }
 
 @layer utilities {
+  /* Hide native scrollbars cross-browser */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
   .container {
     width: 100%;
     margin-left: auto;

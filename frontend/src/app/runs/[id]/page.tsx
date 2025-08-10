@@ -43,32 +43,32 @@ export default function RunPage() {
   }, [id]);
 
   return (
-    <SidebarInset>
-      <div className="flex w-full h-full flex-col gap-4 p-4 h-full">
+    <SidebarInset className="bg-transparent">
+      <div className="flex w-full h-full flex-col gap-4 p-4 h-full text-white">
         <h1 className="text-2xl font-bold">Run {id}</h1>
         {run && (
           <div className="grid grid-cols-12 gap-4 h-full">
             <div className="flex flex-col gap-4 col-span-4 h-full">
-              <Card>
+              <Card className="bg-white/5 border border-white/10">
                 <CardHeader>
                   <CardTitle>Test Info</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2">
                   <div className="flex justify-between gap-2 items-center">
                     <div className="text-sm font-medium">Test Case</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-white/60">
                       {testCase?.name}
                     </div>
                   </div>
                   <div className="flex justify-between gap-2 items-center">
                     <div className="text-sm font-medium">Started At</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-white/60">
                       {new Date(run.startedAt).toLocaleString()}
                     </div>
                   </div>
                   <div className="flex justify-between gap-2 items-center">
                     <div className="text-sm font-medium">Finished At</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-white/60">
                       {run.finishedAt
                         ? new Date(run.finishedAt).toLocaleString()
                         : "N/A"}
@@ -76,19 +76,19 @@ export default function RunPage() {
                   </div>
                   <div className="flex justify-between gap-2 items-center">
                     <div className="text-sm font-medium">Success</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-white/60">
                       {run.success ? "Yes" : "No"}
                     </div>
                   </div>
                   <div className="flex justify-between gap-2 items-center">
                     <div className="text-sm font-medium">Agent</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-white/60">
                       {run.agentName}
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="col-span-8 h-full">
+              <Card className="col-span-8 h-full bg-white/5 border border-white/10">
                 <CardHeader>
                   <CardTitle>Events</CardTitle>
                 </CardHeader>

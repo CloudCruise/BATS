@@ -62,7 +62,7 @@ export function TabbedSidebar({ open, currentUrl, agentRunning, onAgentToggle, a
 
   return (
     <div
-      className="border-l bg-background shadow-sm flex flex-col h-full min-h-0"
+      className="border-l border-white/10 bg-white/5 backdrop-blur-md text-white shadow-sm flex flex-col h-full min-h-0"
       style={{ width: `${widthPx}px`, minWidth: `${widthPx}px` }}
     >
       {/* Drag handle */}
@@ -73,8 +73,8 @@ export function TabbedSidebar({ open, currentUrl, agentRunning, onAgentToggle, a
       />
       
       {/* Header */}
-      <div className="flex border-b bg-muted/30">
-        <Button variant="secondary" size="sm" className="flex-1 rounded-none justify-start gap-2" disabled>
+      <div className="flex border-b border-white/10 bg-white/5">
+        <Button variant="secondary" size="sm" className="flex-1 rounded-none justify-start gap-2 bg-transparent text-white/90 hover:bg-white/10" disabled>
           <Bot className="w-4 h-4" />
           Agent Mode
         </Button>

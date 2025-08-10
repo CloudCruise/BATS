@@ -19,8 +19,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body>
+        {/* Global gradient background to match landing page */}
+        <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#0d1b2a] via-[#0f2742] to-[#1b1f3a]" />
         <SidebarProvider className="flex min-h-screen flex-col">
           <AppSidebar />
           <main>

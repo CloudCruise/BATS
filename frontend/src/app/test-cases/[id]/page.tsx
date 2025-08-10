@@ -34,8 +34,8 @@ export default function TestCasePage({
 
   return (
     <SidebarInset>
-      <div className="flex w-full h-full flex-col gap-4 p-4">
-        <h1 className="text-2xl font-bold">Test Cases</h1>
+      <div className="flex w-full h-full flex-col gap-4 p-4 text-white">
+        <h1 className="text-2xl font-bold">Test Case</h1>
         <div className="grid grid-cols-12 gap-4 h-full">
           <div className="col-span-4">
             {testCase && <TestCaseInfo testCase={testCase} />}
@@ -43,7 +43,7 @@ export default function TestCasePage({
           <div className="col-span-8 h-full">
             {testCase && (
               <WebPreview defaultUrl={testCase.pageUrl}>
-                <WebPreviewNavigation className="justify-between">
+                <WebPreviewNavigation className="justify-between border-white/10 bg-white/5 text-white">
                   <div className="flex-1 min-w-0">
                     <WebPreviewUrl src={testCase.pageUrl} />
                   </div>

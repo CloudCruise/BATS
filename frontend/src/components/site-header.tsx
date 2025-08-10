@@ -12,16 +12,16 @@ type SiteHeaderProps = {
 
 export function SiteHeader({ onGenerateNew, onToggleChat, isChatOpen }: SiteHeaderProps) {
   return (
-    <div className="h-[var(--header-height,56px)] sticky top-0 z-30 grid grid-cols-3 items-center border-b bg-background/80 backdrop-blur px-4">
+    <div className="h-[var(--header-height,56px)] sticky top-0 z-30 grid grid-cols-3 items-center border-b border-white/10 bg-white/5 backdrop-blur-sm px-4 text-white">
       <div className="flex items-center gap-2">
         <SidebarTrigger />
         <span className="font-semibold">BATS</span>
       </div>
       <div className="flex items-center justify-center">
         <Button
-          variant="default"
+          variant="secondary"
           size="sm"
-          className="bg-black text-white hover:bg-black/90"
+          className="rounded-xl bg-white/10 text-white hover:bg_white/15 border border-white/20"
           onClick={onGenerateNew}
         >
           Generate new website

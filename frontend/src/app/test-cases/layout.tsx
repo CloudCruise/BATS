@@ -17,8 +17,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SidebarInset>
-      <div className="flex min-h-screen flex-col">{children}</div>
+    <SidebarInset className="bg-transparent">
+      <div className="flex min-h-screen flex-col text-white">{children}</div>
     </SidebarInset>
   );
 }

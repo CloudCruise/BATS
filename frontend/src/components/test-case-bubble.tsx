@@ -26,10 +26,10 @@ export function TestCaseBubble({
         }
       }}
       className={cn(
-        "cursor-pointer flex items-center justify-between p-4 rounded-xl transition-all duration-200 text-left  group w-full",
-        backgroundTransparent &&
-          "border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 ",
-        !backgroundTransparent && "bg-white/5 border border-muted shadow"
+        "cursor-pointer flex items-center justify-between p-4 rounded-xl transition-all duration-200 text-left group w-full",
+        backgroundTransparent
+          ? "border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10"
+          : "bg-white/5 border border-white/10 shadow"
       )}
     >
       <div className="w-full overflow-hidden">
@@ -38,8 +38,7 @@ export function TestCaseBubble({
           <div
             className={cn(
               "text-xs",
-              backgroundTransparent && "text-white/50",
-              !backgroundTransparent && "text-black/50"
+              backgroundTransparent ? "text-white/60" : "text-white/60"
             )}
           >
             {new Date(testCase.createdAt).toLocaleDateString()}
@@ -48,8 +47,7 @@ export function TestCaseBubble({
         <div
           className={cn(
             "text-xs truncate",
-            backgroundTransparent && "text-white/60",
-            !backgroundTransparent && "text-black/60"
+            backgroundTransparent ? "text-white/70" : "text-white/70"
           )}
         >
           {testCase.description}

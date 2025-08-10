@@ -146,17 +146,21 @@ export function ChatPanel({
                         switch (part.type) {
                           case "text": {
                             const raw = "text" in part ? part.text || "" : "";
-                            const match = raw
-                              .replace(/\r/g, "")
-                              .match(/(?:^|\n)\s*(?:1\)\s*)?PREAMBLE\s*:?\s*\n([\s\S]*?)(?:\n\s*(?:2\)\s*)?HTML\b)/i);
-                            const preamble = match && match[1]
-                              ? match[1]
-                                  .split("\n")
-                                  .filter((line) => !/^\s*(PREAMBLE|HTML)\s*:?\s*$/i.test(line))
-                                  .join("\n")
-                                  .replace(/\n\s*\n+/g, "\n")
-                                  .trim()
-                              : "";
+                            // Prefer <preamble>...</preamble> XML tag
+                            const xml = raw.replace(/\r/g, "");
+                            const xmlMatch = xml.match(/<preamble>\s*([\s\S]*?)\s*<\/preamble>/i);
+                            let preamble = xmlMatch && xmlMatch[1] ? xmlMatch[1].trim() : "";
+                            if (!preamble) {
+                              const match = xml.match(/(?:^|\n)\s*(?:1\)\s*)?PREAMBLE\s*:?\s*\n([\s\S]*?)(?:\n\s*(?:2\)\s*)?HTML\b)/i);
+                              preamble = match && match[1]
+                                ? match[1]
+                                    .split("\n")
+                                    .filter((line) => !/^\s*(PREAMBLE|HTML)\s*:?\s*$/i.test(line))
+                                    .join("\n")
+                                    .replace(/\n\s*\n+/g, "\n")
+                                    .trim()
+                                : "";
+                            }
 
                             if (preamble) {
                               return (

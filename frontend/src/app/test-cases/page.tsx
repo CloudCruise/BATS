@@ -20,7 +20,7 @@ export default function TestCasesPage() {
   }, []);
 
   return (
-    <div className="flex w-full justify-center">
+    <div className="flex w-full justify-center text-white">
       <div className="flex w-full max-w-screen-md flex-col gap-4 p-4">
         <h1 className="text-2xl font-bold">Test Cases</h1>
         {loading ? (
@@ -35,7 +35,7 @@ export default function TestCasesPage() {
                 <TestCaseBubble
                   key={testCase.id}
                   testCase={testCase}
-                  backgroundTransparent={false}
+                  backgroundTransparent={true}
                 />
               ))}
           </div>

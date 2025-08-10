@@ -81,10 +81,12 @@ export default function Home() {
 
   // Show landing page by default
   return (
-    <Landing
-      onGenerate={handleGenerate}
-      onOpenExisting={(url) => setGeneratedUrl(url)}
-      isLoading={status === "streaming"}
-    />
+    <div className="text-white">
+      <Landing
+        onGenerate={handleGenerate}
+        onOpenExisting={(url) => setGeneratedUrl(url)}
+        isLoading={status === "streaming"}
+      />
+    </div>
   );
 }

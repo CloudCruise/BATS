@@ -91,6 +91,10 @@ export function extractName(raw: string): string {
 }
 
 export function extractPreamble(raw: string): string {
+  // Prefer explicit <preamble>...</preamble> XML tag when present
+  const byTag = getTagInner(raw, "preamble");
+  if (byTag) return byTag;
+
   const text = stripFences(normalizeAngles(raw)).replace(/\r/g, "");
   // Prefer explicit PREAMBLE → HTML
   const byHeaders = text.match(

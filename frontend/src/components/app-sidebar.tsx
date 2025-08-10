@@ -59,7 +59,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {...props}
       variant="sidebar"
       collapsible="icon"
-      className="!bg-white/10 !backdrop-blur-md !border-r !border-black/20 [&>*]:!bg-transparent"
+      className="!bg-white/5 !backdrop-blur-md !border-r !border-white/10 !text-white [&>*]:!bg-transparent"
     >
       <SidebarHeader>
         <Header />

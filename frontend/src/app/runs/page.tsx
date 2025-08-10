@@ -27,9 +27,9 @@ export default function RunsPage() {
   }, []);
 
   return (
-    <SidebarInset>
-      <div className="flex w-full max-w-screen-md flex-col gap-4 p-4">
-        <h1 className="text-2xl font-bold">Test Cases</h1>
+    <SidebarInset className="bg-transparent">
+      <div className="flex w-full max-w-screen-md flex-col gap-4 p-4 text-white">
+        <h1 className="text-2xl font-bold">All Runs</h1>
         {loading ? (
           <div className="flex w-full justify-center">
             <Skeleton className="h-10 w-full" />
@@ -40,7 +40,7 @@ export default function RunsPage() {
               runs?.map((run) => (
                 <div
                   key={run.id}
-                  className="flex flex-col gap-2 p-4 rounded-xl transition-all duration-200 text-left  group w-full border shadow-sm hover:bg-muted/50 cursor-pointer"
+                  className="flex flex-col gap-2 p-4 rounded-xl transition-all duration-200 text-left group w-full border border-white/10 bg-white/5 hover:bg-white/10 cursor-pointer"
                   onClick={() => {
                     router.push(`/runs/${run.id}`);
                   }}
@@ -53,12 +53,12 @@ export default function RunsPage() {
                         )?.name
                       }
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-white/60">
                       {new Date(run.startedAt).toLocaleDateString()}{" "}
                       {new Date(run.startedAt).toLocaleTimeString()}
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">{run.id}</div>
+                  <div className="text-xs text-white/70">{run.id}</div>
                 </div>
               ))}
           </div>

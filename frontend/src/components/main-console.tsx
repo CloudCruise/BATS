@@ -16,8 +16,6 @@ import { UIMessage } from "@ai-sdk/react";
 import { Tabs, TabsTrigger, TabsList, TabsContent } from "./ui/tabs";
 import { PageAgent, AgentRunner, type AgentAction } from "@/agent/main-agent";
 import { SidebarInset as SidebarInset2 } from "./sidebar-inset";
-import { BotIcon } from "lucide-react";
-import { Button } from "./ui/button";
 
 type SavedSite = { id: string; title: string; url: string; createdAt: number };
 
@@ -211,24 +209,24 @@ export function MainConsole({
         onSelect={(u) => setActiveUrl(u)}
         onDelete={(u) => removeSite(u)}
       /> */}
-        <SidebarInset>
+        <SidebarInset className="bg-transparent">
           <SiteHeader
             onGenerateNew={onBackToPrompt}
             onToggleChat={() => setRightOpen((s) => !s)}
             isChatOpen={rightOpen}
           />
-          <div className="flex flex-1 flex-col">
-            <div className="flex flex-1 flex-col gap-2">
+          <div className="flex flex-1 flex-col text-white min-h-0">
+            <div className="flex flex-1 flex-col gap-2 min-h-0">
               <div className="flex flex-col gap-4 p-4 md:p-6">
                 <Tabs defaultValue="streaming">
                   <div className="flex justify-end">
-                    <TabsList>
+                    <TabsList className="bg-white/5 text-white/80 border border-white/10">
                       <TabsTrigger value="streaming">Streaming</TabsTrigger>
                       <TabsTrigger value="code">Code</TabsTrigger>
                     </TabsList>
                   </div>
-                  <div className="relative h-[calc(100vh-8rem)] rounded-lg border">
-                    <TabsContent value="streaming">
+                  <div className="relative h-[calc(100vh-8rem)] overflow-hidden rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm">
+                    <TabsContent value="streaming" className="h-full overflow-hidden">
                       <StreamingWebPreview
                         messages={messages}
                         isStreaming={isGenerating}
@@ -240,7 +238,7 @@ export function MainConsole({
                         onUrlChange={(u) => setActiveUrl(u)}
                         style={{ height: "100%" }}
                       >
-                        <WebPreviewNavigation className="justify-between">
+                        <WebPreviewNavigation className="justify-between border-white/10 bg-white/5 text-white">
                           <div className="flex-1 min-w-0">
                             <WebPreviewUrl src={activeUrl} />
                           </div>
@@ -256,7 +254,7 @@ export function MainConsole({
         </SidebarInset>
         {/* Right Sidebar */}
         <div
-          className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          className={`transition-all duration-300 ease-in-out overflow-hidden h-svh max-h-svh ${
             rightOpen ? "w-[380px] min-w-[380px]" : "w-0 min-w-0"
           }`}
         >

@@ -21,12 +21,12 @@ export function AgentPanel({ currentUrl, agentRunning, onAgentToggle, actions = 
   const [toolsOpen, setToolsOpen] = useState(false);
 
   return (
-    <div className="h-full flex flex-col bg-background">
+    <div className="h-full flex flex-col bg-transparent text-white">
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {actions.length > 0 ? (
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-            <div className="p-4 border-b flex-shrink-0">
-              <h3 className="text-sm font-medium text-foreground">Activity Feed</h3>
+            <div className="p-4 border-b border-white/10 flex-shrink-0">
+              <h3 className="text-sm font-medium text-white/90">Activity Feed</h3>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30">
               <div className="p-4 space-y-3">
@@ -111,13 +111,13 @@ export function AgentPanel({ currentUrl, agentRunning, onAgentToggle, actions = 
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="space-y-1 mt-2">
-                    <div className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
+                     <div className="text-xs text-white/70 bg-white/5 rounded p-2 border border-white/10">
                       <span className="font-mono">openPopup</span> - Open popups/modals by clicking elements
                     </div>
-                    <div className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
+                     <div className="text-xs text-white/70 bg-white/5 rounded p-2 border border-white/10">
                       <span className="font-mono">moveButton</span> - Reposition buttons to specific coordinates
                     </div>
-                    <div className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
+                     <div className="text-xs text-white/70 bg-white/5 rounded p-2 border border-white/10">
                       <span className="font-mono">insertButton</span> - Add new buttons with custom styling
                     </div>
                   </CollapsibleContent>
@@ -125,8 +125,8 @@ export function AgentPanel({ currentUrl, agentRunning, onAgentToggle, actions = 
 
                 {currentUrl && (
                   <div className="space-y-2">
-                    <h3 className="text-sm font-medium text-foreground">Target Page</h3>
-                    <p className="text-xs text-muted-foreground font-mono bg-muted/30 rounded p-2 break-all">
+                    <h3 className="text-sm font-medium text-white/90">Target Page</h3>
+                    <p className="text-xs text-white/80 font-mono bg-white/5 border border-white/10 rounded p-2 break-all">
                       {currentUrl}
                     </p>
                   </div>
@@ -148,13 +148,13 @@ export function AgentPanel({ currentUrl, agentRunning, onAgentToggle, actions = 
         )}
       </div>
 
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-white/10">
         <div className="relative">
           <Button
             onClick={onAgentToggle}
             disabled={!currentUrl}
-            className={`w-full relative ${agentRunning ? 'bg-red-600 hover:bg-red-700' : ''}`}
-            variant={agentRunning ? "destructive" : "default"}
+            className={`w-full relative ${agentRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-white/10 hover:bg-white/15 text-white border border-white/20'}`}
+            variant={agentRunning ? "destructive" : "secondary"}
           >
             {agentRunning ? (
               <>

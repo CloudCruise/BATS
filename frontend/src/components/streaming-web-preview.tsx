@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +27,8 @@ export function StreamingWebPreview({
   isStreaming = false,
   title = "Generating website...",
 }: StreamingWebPreviewProps) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [phase, setPhase] = useState<"planning" | "searching">("planning");
   // Extract PREAMBLE content (preferred) or fallback to 'reasoning' parts
   const preambleContent = useMemo(() => {
     const assistantMessages = messages.filter((m) => m.role === "assistant");
@@ -97,8 +99,26 @@ export function StreamingWebPreview({
     return htmlContent.split("\n");
   }, [htmlContent]);
 
+  // Auto-scroll to bottom while streaming
+  useEffect(() => {
+    if (!isStreaming) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [isStreaming, lines.length]);
+
+  // Progress loading phases: planning (2s) → searching (hold)
+  useEffect(() => {
+    if (!isStreaming || hasHtml) return;
+    // Reset to planning on a fresh stream start
+    setPhase("planning");
+    const t = setTimeout(() => setPhase("searching"), 2000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStreaming]);
+
   return (
-    <div className="h-full flex flex-col bg-background">
+    <div className="h-full flex flex-col min-h-0 bg-background">
       {/* Header */}
       <div className="flex items-center gap-3 border-b p-4 bg-muted/30">
         <Loader2 className={`h-5 w-5 ${!isStreaming ? "" : "animate-spin"}`} />
@@ -116,7 +136,7 @@ export function StreamingWebPreview({
       </div>
       {/* Reasoning Section - Stacked on top */}
       {hasReasoning && (
-        <div className="border-b bg-muted/10 p-4">
+        <div className="border-b bg-muted/10 p-4 max-h-40 overflow-auto">
           <Reasoning
             isStreaming={isStreaming && hasReasoning}
             open={true}
@@ -128,19 +148,30 @@ export function StreamingWebPreview({
       )}
 
       {/* HTML Code Section - Takes remaining space */}
-      <div className="flex-1 p-4 overflow-hidden">
-        <div className="h-full rounded-xl border bg-muted/30 p-4 overflow-auto relative">
+      <div className="flex-1 min-h-0 p-4 overflow-hidden">
+        <div ref={scrollRef} className="h-full rounded-xl border bg-muted/30 p-4 overflow-auto overscroll-contain no-scrollbar relative">
           {!hasHtml ? (
             // Loading state with hardcoded message
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin mb-4" />
               <div className="text-center space-y-2">
-                <p className="text-lg font-medium">
-                  Searching the web for reference pages...
-                </p>
-                <p className="text-sm">
-                  Gathering examples and patterns to guide generation
-                </p>
+                {phase === "planning" ? (
+                  <>
+                    <p className="text-lg font-medium">
+                      Analyzing user instructions and creating a plan
+                    </p>
+                    <p className="text-sm">Preparing generation steps...</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-lg font-medium">
+                      Searching the web for reference pages...
+                    </p>
+                    <p className="text-sm">
+                      Gathering examples and patterns to guide generation
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           ) : (
