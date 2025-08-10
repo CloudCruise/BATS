@@ -73,7 +73,9 @@ export function StreamingWebPreview({
   }, [messages]);
 
   const displayReasoning = useMemo(() => {
-    return (reasoningContent || fallbackReasoning) || "";
+    const raw = (reasoningContent || fallbackReasoning) || "";
+    // Collapse extra blank lines between bullet points and normalize line endings
+    return raw.replace(/\r/g, "").replace(/\n\s*\n+/g, "\n");
   }, [reasoningContent, fallbackReasoning]);
 
   // Check if we have any content to show
