@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { AppSidebar } from "@/components/app-sidebar";
+// import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { TabbedSidebar } from "@/components/tabbed-sidebar";
@@ -22,7 +22,12 @@ type MainConsoleProps = {
 const STORAGE_KEY = "bats:saved-sites";
 const CONTINUOUS_MODE = false;
 
-export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGenerating = false }: MainConsoleProps) {
+export function MainConsole({
+  initialUrl,
+  onBackToPrompt,
+  messages = [],
+  isGenerating = false,
+}: MainConsoleProps) {
   const [rightOpen, setRightOpen] = useState(true);
   const [sites, setSites] = useState<SavedSite[]>([]);
   const [activeUrl, setActiveUrl] = useState(initialUrl || "");
@@ -33,11 +38,12 @@ export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGener
   const pageRef = useRef<PageAgent | null>(null);
   const runnerRef = useRef<AgentRunner | null>(null);
   const [uiMessages, setUIMessages] = useState<Array<{ id: string; role: 'assistant' | 'user'; parts: Array<{ type: string; text?: string }> }>>([]);
+  
 
   // Function to validate if a URL still exists
   const validateUrl = async (url: string): Promise<boolean> => {
     try {
-      const response = await fetch(url, { method: 'HEAD' });
+      const response = await fetch(url, { method: "HEAD" });
       return response.ok;
     } catch {
       return false;
@@ -47,14 +53,14 @@ export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGener
   // Function to clean up broken URLs from localStorage
   const cleanupBrokenUrls = useCallback(async (sitesToCheck: SavedSite[]) => {
     const validSites: SavedSite[] = [];
-    
+
     for (const site of sitesToCheck) {
       const isValid = await validateUrl(site.url);
       if (isValid) {
         validSites.push(site);
       }
     }
-    
+
     // Update localStorage and state if any sites were removed
     if (validSites.length !== sitesToCheck.length) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(validSites));
@@ -83,7 +89,9 @@ export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGener
         const next: SavedSite[] = [
           {
             id: crypto.randomUUID(),
-            title: new URL(initialUrl, location.origin).pathname.split("/").pop() || "site",
+            title:
+              new URL(initialUrl, location.origin).pathname.split("/").pop() ||
+              "site",
             url: initialUrl,
             createdAt: Date.now(),
           },
@@ -152,35 +160,41 @@ export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGener
     }
   };
 
-  const items = sites.map((s) => ({ name: s.title, url: s.url }));
+  // const items = sites.map((s) => ({ name: s.title, url: s.url }));
 
-  const removeSite = (targetUrl: string) => {
-    setSites((prev) => {
-      const next = prev.filter((s) => s.url !== targetUrl);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      if (activeUrl === targetUrl) {
-        setActiveUrl(next[0]?.url ?? "");
-      }
-      return next;
-    });
-  };
+  // const removeSite = (targetUrl: string) => {
+  //   setSites((prev) => {
+  //     const next = prev.filter((s) => s.url !== targetUrl);
+  //     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  //     if (activeUrl === targetUrl) {
+  //       setActiveUrl(next[0]?.url ?? "");
+  //     }
+  //     return next;
+  //   });
+  // };
 
   return (
-    <SidebarProvider 
-      style={{ 
-        "--header-height": "56px",
-        "--sidebar-width": "260px" 
-      } as React.CSSProperties}
+    <SidebarProvider
+      style={
+        {
+          "--header-height": "56px",
+          "--sidebar-width": "260px",
+        } as React.CSSProperties
+      }
     >
-      <AppSidebar
+      {/* <AppSidebar
         variant="inset"
         items={items}
         activeUrl={activeUrl}
         onSelect={(u) => setActiveUrl(u)}
         onDelete={(u) => removeSite(u)}
-      />
+      /> */}
       <SidebarInset>
-        <SiteHeader onGenerateNew={onBackToPrompt} onToggleChat={() => setRightOpen((s) => !s)} isChatOpen={rightOpen} />
+        <SiteHeader
+          onGenerateNew={onBackToPrompt}
+          onToggleChat={() => setRightOpen((s) => !s)}
+          isChatOpen={rightOpen}
+        />
         <div className="flex flex-1 flex-col">
           <div className="flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 p-4 md:p-6">
@@ -191,7 +205,11 @@ export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGener
                     isStreaming={isGenerating}
                   />
                 ) : (
-                  <WebPreview defaultUrl={activeUrl} onUrlChange={(u) => setActiveUrl(u)} style={{ height: '100%' }}>
+                  <WebPreview
+                    defaultUrl={activeUrl}
+                    onUrlChange={(u) => setActiveUrl(u)}
+                    style={{ height: "100%" }}
+                  >
                     <WebPreviewNavigation className="justify-between">
                       <div className="flex-1 min-w-0">
                         <WebPreviewUrl src={activeUrl} />

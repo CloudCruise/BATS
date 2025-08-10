@@ -1,29 +1,35 @@
-'use client';
+"use client";
 
-import type { ComponentProps } from 'react';
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { ChevronDownIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import type { ComponentProps } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ChevronDownIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type ConversationContextValue = {
   scrollToBottom: () => void;
   isAtBottom: boolean;
 };
 
-const ConversationContext = createContext<ConversationContextValue | null>(null);
+const ConversationContext = createContext<ConversationContextValue | null>(
+  null
+);
 
 const useConversation = () => {
   const context = useContext(ConversationContext);
   if (!context) {
-    throw new Error('Conversation components must be used within Conversation');
+    throw new Error("Conversation components must be used within Conversation");
   }
   return context;
 };
 
-export type ConversationProps = ComponentProps<'div'>;
+export type ConversationProps = ComponentProps<"div">;
 
-export const Conversation = ({ className, children, ...props }: ConversationProps) => {
+export const Conversation = ({
+  className,
+  children,
+  ...props
+}: ConversationProps) => {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +57,7 @@ export const Conversation = ({ className, children, ...props }: ConversationProp
     <ConversationContext.Provider value={{ scrollToBottom, isAtBottom }}>
       <div
         ref={scrollRef}
-        className={cn('flex-1 overflow-y-auto', className)}
+        className={cn("flex-1 overflow-y-auto", className)}
         onScroll={handleScroll}
         {...props}
       >
@@ -61,11 +67,18 @@ export const Conversation = ({ className, children, ...props }: ConversationProp
   );
 };
 
-export type ConversationContentProps = ComponentProps<'div'>;
+export type ConversationContentProps = ComponentProps<"div">;
 
-export const ConversationContent = ({ className, children, ...props }: ConversationContentProps) => {
+export const ConversationContent = ({
+  className,
+  children,
+  ...props
+}: ConversationContentProps) => {
   return (
-    <div className={cn('p-4 space-y-4', className)} {...props}>
+    <div
+      className={cn("p-4 space-y-4 max-h-[500px] overflow-y-auto", className)}
+      {...props}
+    >
       {children}
     </div>
   );
@@ -73,7 +86,10 @@ export const ConversationContent = ({ className, children, ...props }: Conversat
 
 export type ConversationScrollButtonProps = ComponentProps<typeof Button>;
 
-export const ConversationScrollButton = ({ className, ...props }: ConversationScrollButtonProps) => {
+export const ConversationScrollButton = ({
+  className,
+  ...props
+}: ConversationScrollButtonProps) => {
   const { scrollToBottom, isAtBottom } = useConversation();
 
   if (isAtBottom) return null;
@@ -83,7 +99,7 @@ export const ConversationScrollButton = ({ className, ...props }: ConversationSc
       variant="outline"
       size="icon"
       className={cn(
-        'absolute bottom-20 right-4 rounded-full shadow-lg',
+        "absolute bottom-20 right-4 rounded-full shadow-lg",
         className
       )}
       onClick={scrollToBottom}
@@ -94,6 +110,6 @@ export const ConversationScrollButton = ({ className, ...props }: ConversationSc
   );
 };
 
-Conversation.displayName = 'Conversation';
-ConversationContent.displayName = 'ConversationContent';
-ConversationScrollButton.displayName = 'ConversationScrollButton';
+Conversation.displayName = "Conversation";
+ConversationContent.displayName = "ConversationContent";
+ConversationScrollButton.displayName = "ConversationScrollButton";

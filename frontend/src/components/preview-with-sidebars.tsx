@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { WebPreview, WebPreviewBody, WebPreviewNavigation, WebPreviewUrl } from "@/components/web-preview";
+import {
+  WebPreview,
+  WebPreviewBody,
+  WebPreviewNavigation,
+  WebPreviewUrl,
+} from "@/components/web-preview";
 import { Button } from "@/components/ui/button";
 import { BotIcon } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -40,7 +45,8 @@ export function PreviewWithSidebars({ url, onBackToPrompt }: PreviewProps) {
       const next: SavedSite[] = [
         {
           id: crypto.randomUUID(),
-          title: new URL(url, location.origin).pathname.split("/").pop() || "site",
+          title:
+            new URL(url, location.origin).pathname.split("/").pop() || "site",
           url,
           createdAt: Date.now(),
         },
@@ -65,26 +71,41 @@ export function PreviewWithSidebars({ url, onBackToPrompt }: PreviewProps) {
   };
 
   return (
-    <SidebarProvider style={{ "--header-height": "56px" } as React.CSSProperties}>
+    <SidebarProvider
+      style={{ "--header-height": "56px" } as React.CSSProperties}
+    >
       {/* Left Sidebar */}
-      <AppSidebar
+      {/* <AppSidebar
         items={items}
         activeUrl={activeUrl}
         onSelect={(u) => setActiveUrl(u)}
         onDelete={(u) => removeSite(u)}
-      />
+      /> */}
       {/* Main inset */}
       <SidebarInset className="gap-2">
-        <SiteHeader onGenerateNew={onBackToPrompt} onToggleChat={() => setRightOpen((s) => !s)} isChatOpen={rightOpen} />
+        <SiteHeader
+          onGenerateNew={onBackToPrompt}
+          onToggleChat={() => setRightOpen((s) => !s)}
+          isChatOpen={rightOpen}
+        />
         <div className="flex-1 overflow-hidden">
           <div className="relative h-full rounded-lg border">
-            <WebPreview defaultUrl={activeUrl} onUrlChange={(u) => setActiveUrl(u)} style={{ height: '100%' }}>
+            <WebPreview
+              defaultUrl={activeUrl}
+              onUrlChange={(u) => setActiveUrl(u)}
+              style={{ height: "100%" }}
+            >
               <WebPreviewNavigation className="justify-between">
                 <div className="flex-1 min-w-0">
                   <WebPreviewUrl src={activeUrl} />
                 </div>
                 <div className="shrink-0 ml-2">
-                  <Button variant="outline" size="sm" className="whitespace-nowrap" type="button">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="whitespace-nowrap"
+                    type="button"
+                  >
                     <BotIcon className="w-4 h-4 mr-2" />
                     Agent Mode
                   </Button>
@@ -96,9 +117,7 @@ export function PreviewWithSidebars({ url, onBackToPrompt }: PreviewProps) {
         </div>
       </SidebarInset>
       {/* Right Sidebar sibling to inset so it overlays properly */}
-      <ChatSidebar open={rightOpen} />
+      {/* <ChatSidebar open={rightOpen} /> */}
     </SidebarProvider>
   );
 }
-
-

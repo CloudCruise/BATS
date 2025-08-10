@@ -10,7 +10,6 @@ export async function POST(req: Request) {
   try {
     const { messages: incomingMessages, activeTools }: { messages: UIMessage[] | ModelMessage[]; activeTools?: string[] } = await req.json();
     const list = activeTools && activeTools.length ? activeTools : Object.keys(toolSchemas);
-    // Expose ONLY schemas (no execute) so the client executes tools
     const tools = Object.fromEntries(
       list
         .map((name) => {
@@ -19,7 +18,7 @@ export async function POST(req: Request) {
         })
         .filter(Boolean) as [string, ReturnType<typeof tool>][]
     );
-    const systemPrompt = await fetchAndCompilePrompt("adversarial-agent")
+    const systemPrompt = await fetchAndCompilePrompt("adversarial-agent");
 
     const modelMessages: ModelMessage[] = Array.isArray(incomingMessages) && (incomingMessages as (UIMessage | ModelMessage)[])[0] && 'parts' in (incomingMessages as (UIMessage | ModelMessage)[])[0]!
       ? convertToModelMessages(incomingMessages as UIMessage[])
