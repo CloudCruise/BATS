@@ -148,10 +148,10 @@ export function MainConsole({
       // Guard iframe from navigation while agent is running
       page.enableNavGuards(true);
       if (CONTINUOUS_MODE) {
-        await runner.runLoop("Disrupt browser automation with new buttons, moved buttons, and more.");
+        await runner.runLoop("Keep modifying the website with new buttons, moved buttons, and more.");
       } else {
         // Use the new runIterations method for 3 iterations
-        await runner.runIterations("Disrupt browser automation with new buttons, moved buttons, and more.", 3);
+        await runner.runIterations("Keep modifying the website with new buttons, moved buttons, and more.", 3);
       }
     } finally {
       // Remove guards and stop running state
