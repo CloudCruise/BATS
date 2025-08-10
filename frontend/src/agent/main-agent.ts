@@ -84,8 +84,8 @@ export class PageAgent {
       // Optionally block history mutations that some scripts use instead of location
       const originalPushState = win.history.pushState.bind(win.history);
       const originalReplaceState = win.history.replaceState.bind(win.history);
-      win.history.pushState = ((..._args: Parameters<typeof originalPushState>) => {}) as typeof win.history.pushState;
-      win.history.replaceState = ((..._args: Parameters<typeof originalReplaceState>) => {}) as typeof win.history.replaceState;
+      win.history.pushState = (() => {}) as typeof win.history.pushState;
+      win.history.replaceState = (() => {}) as typeof win.history.replaceState;
 
       this.removeNavGuards = () => {
         doc.removeEventListener('click', clickHandler, true);
@@ -308,6 +308,7 @@ export class AgentRunner {
         state: 'running'
       });
       
+      // Always use streaming mode for agent
       const res = await fetch("/api/agent", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -315,7 +316,7 @@ export class AgentRunner {
         signal,
       }).catch(() => null);
       
-      if (!res || !res.ok) {
+      if (!res || !res.ok || !res.body) {
         this.onAction?.({
           id: reasoningId,
           type: 'reasoning',
@@ -326,60 +327,64 @@ export class AgentRunner {
         break;
       }
       
-      const data = (await res.json()) as { toolCalls?: ToolCall[]; text?: string };
-      
-      // Complete reasoning
-      this.onAction?.({
-        id: reasoningId,
-        type: 'reasoning',
-        timestamp: new Date(),
-        content: data.text || `Iteration ${i + 1}/${iterations}: Analysis complete. Executing ${data.toolCalls?.length || 0} tools...`,
-        state: 'completed'
-      });
-      
-      const calls = data.toolCalls ?? [];
-      if (calls.length === 0) {
-        // No more actions to take
-        break;
-      }
-      
-      // Execute tool calls concurrently
-      await Promise.all(calls.map(async (call, idx) => {
-        if (!this.running || signal.aborted) return;
-        const toolId = `tool-${i}-${call.toolCallId || Date.now()}-${idx}`;
-        this.onAction?.({
-          id: toolId,
-          type: 'tool',
-          timestamp: new Date(),
-          toolName: call.toolName,
-          toolInput: call.input as Record<string, unknown> | string | number | boolean | null,
-          state: 'running'
-        });
-        try {
-          const output = await this.page.runTool(call.toolName, call.input);
-          this.onAction?.({
-            id: toolId,
-            type: 'tool',
-            timestamp: new Date(),
-            toolName: call.toolName,
-            toolInput: call.input as Record<string, unknown> | string | number | boolean | null,
-            toolOutput: output as Record<string, unknown> | string | number | boolean | null,
-            state: 'completed'
-          });
-          this.messages.push({ role: "assistant", content: [{ type: "tool-call", toolCallId: call.toolCallId, toolName: call.toolName, input: call.input }] });
-          this.messages.push({ role: "tool", content: [{ type: "tool-result", toolCallId: call.toolCallId, toolName: call.toolName, output }] });
-        } catch (error) {
-          this.onAction?.({
-            id: toolId,
-            type: 'tool',
-            timestamp: new Date(),
-            toolName: call.toolName,
-            toolInput: call.input as Record<string, unknown> | string | number | boolean | null,
-            toolError: error instanceof Error ? error.message : 'Unknown error',
-            state: 'error'
-          });
+      // Parse UI Message SSE stream
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      const sseBuffer = { text: '' } as { text: string };
+
+      const parseSSELines = (chunk: string, buffer: { text: string }) => {
+        buffer.text += chunk;
+        const events: string[] = [];
+        let idx: number;
+        while ((idx = buffer.text.indexOf('\n\n')) !== -1) {
+          const raw = buffer.text.slice(0, idx).trim();
+          buffer.text = buffer.text.slice(idx + 2);
+          const dataLines = raw.split('\n').filter(l => l.startsWith('data:'));
+          if (!dataLines.length) continue;
+          const data = dataLines.map(l => l.slice(5).trim()).join('');
+          if (data && data !== '[DONE]') events.push(data);
         }
-      }));
+        return events;
+      };
+      while (this.running && !signal.aborted) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const text = decoder.decode(value, { stream: true });
+        const frames = parseSSELines(text, sseBuffer);
+        for (const frame of frames) {
+          try {
+            const part = JSON.parse(frame) as { type: string; [k: string]: unknown };
+            // Handle reasoning text deltas
+            if (part.type === 'text-delta' && typeof part.delta === 'string') {
+              // Update running reasoning content
+              this.onAction?.({ id: reasoningId, type: 'reasoning', timestamp: new Date(), content: part.delta, state: 'running' });
+            }
+            if (part.type === 'text') {
+              this.onAction?.({ id: reasoningId, type: 'reasoning', timestamp: new Date(), content: String(part.text ?? ''), state: 'completed' });
+            }
+            // Handle tool calls when input is ready
+            if (part.type === 'tool-input-available') {
+              const toolName = String(part.toolName ?? '');
+              const input = part.input as Record<string, unknown> | string | number | boolean | null;
+              const toolCallId = String(part.toolCallId ?? `${Date.now()}`);
+              const toolId = `tool-${i}-${toolCallId}`;
+              this.onAction?.({ id: toolId, type: 'tool', timestamp: new Date(), toolName, toolInput: input, state: 'running' });
+              try {
+                const output = await this.page.runTool(toolName, input);
+                this.onAction?.({ id: toolId, type: 'tool', timestamp: new Date(), toolName, toolInput: input, toolOutput: output as Record<string, unknown> | string | number | boolean | null, state: 'completed' });
+                this.messages.push({ role: 'assistant', content: [{ type: 'tool-call', toolCallId, toolName, input }] });
+                this.messages.push({ role: 'tool', content: [{ type: 'tool-result', toolCallId, toolName, output }] });
+                // Optionally, POST tool result if server session requires it
+                // await fetch('/api/agent/tool-result', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ toolCallId, toolName, output, traceId: this.traceId }) }).catch(() => null);
+              } catch (err) {
+                this.onAction?.({ id: toolId, type: 'tool', timestamp: new Date(), toolName, toolInput: input, toolError: err instanceof Error ? err.message : 'Unknown error', state: 'error' });
+              }
+            }
+          } catch {
+            // ignore malformed chunk
+          }
+        }
+      }
       
       // Small delay between iterations
       if (i < iterations - 1) {

@@ -115,12 +115,7 @@ export type ReasoningTriggerProps = ComponentProps<
 };
 
 export const ReasoningTrigger = memo(
-  ({
-    className,
-    title = 'Reasoning',
-    children,
-    ...props
-  }: ReasoningTriggerProps) => {
+  ({ className, children, ...props }: ReasoningTriggerProps) => {
     const { isStreaming, isOpen, duration } = useReasoning();
 
     return (

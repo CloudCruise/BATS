@@ -31,7 +31,7 @@ export function AgentPanel({ currentUrl, agentRunning, onAgentToggle, actions = 
       </div>
 
       <div className="flex-1 flex flex-col min-h-0">
-        {agentRunning && actions.length > 0 ? (
+        {actions.length > 0 ? (
           <div className="flex-1 min-h-0">
             <div className="p-4 border-b">
               <h3 className="text-sm font-medium text-foreground">Activity Feed</h3>
@@ -75,7 +75,7 @@ export function AgentPanel({ currentUrl, agentRunning, onAgentToggle, actions = 
           </div>
         ) : (
           <div className="flex-1 p-4 space-y-4">
-            {!agentRunning && (
+            {!agentRunning && actions.length === 0 && (
               <>
                 <div className="space-y-2">
                   <h3 className="text-sm font-medium text-foreground">Objective</h3>
