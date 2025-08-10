@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-import { Bot, Play, Square, ChevronDown, ChevronRight } from "lucide-react";
+import { Play, Square, ChevronDown, ChevronRight } from "lucide-react";
 import { Reasoning, ReasoningTrigger, ReasoningContent } from "@/components/ai-elements/reasoning";
 import { Tool, ToolHeader, ToolContent, ToolInput, ToolOutput } from "@/components/ai-elements/tool";
 import { type AgentAction } from "@/agent/main-agent";

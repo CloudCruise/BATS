@@ -31,52 +31,68 @@ export function StreamingWebPreview({
     return t.trim();
   }
 
-  function extractFallbackReasoning(raw: string): string {
+  function extractPreamble(raw: string): string {
     if (!raw) return "";
-    const m = raw.match(/^\s*REASONING[\s\S]*?(?=<!doctype html>|<html)/i);
-    if (!m) return "";
-    const cleaned = m[0]
-      .split("\n")
-      .filter((line) => !/^\s*(REASONING|HTML)\s*:?\s*$/i.test(line))
-      .join("\n")
-      .trim();
-    return cleaned;
+    const text = raw.replace(/\r/g, "");
+    // Prefer explicit PREAMBLE → HTML section
+    const byHeaders = text.match(/(?:^|\n)\s*(?:1\)\s*)?PREAMBLE\s*:?\s*\n([\s\S]*?)(?:\n\s*(?:2\)\s*)?HTML\b)/i);
+    if (byHeaders && byHeaders[1]) {
+      return byHeaders[1]
+        .split("\n")
+        .filter((line) => !/^\s*(PREAMBLE|HTML)\s*:?\s*$/i.test(line))
+        .join("\n")
+        .trim();
+    }
+    // Otherwise, anything before <!doctype html> or <html>
+    const idx = text.search(/<!doctype html>|<html[\s>]/i);
+    if (idx > 0) {
+      return text.slice(0, idx)
+        .split("\n")
+        .filter((line) => !/^\s*(PREAMBLE|HTML)\s*:?\s*$/i.test(line))
+        .join("\n")
+        .trim();
+    }
+    return "";
   }
-  // Extract reasoning content from messages (structured parts)
-  const reasoningContent = useMemo(() => {
+  // Extract PREAMBLE content (preferred) or fallback to 'reasoning' parts
+  const preambleContent = useMemo(() => {
     const assistantMessages = messages.filter((m) => m.role === "assistant");
     const lastMessage = assistantMessages[assistantMessages.length - 1];
     if (!lastMessage?.parts) return "";
+    const textParts = lastMessage.parts.filter((part) => part.type === "text");
+    const rawText = textParts.map((part) => ("text" in part ? part.text : "")).join("");
+    const fromText = extractPreamble(rawText);
+    if (fromText) return fromText;
+    // Fallback: use 'reasoning' parts if present
     const reasoningParts = lastMessage.parts.filter((part) => part.type === "reasoning");
     const combined = reasoningParts.map((part) => ("text" in part ? part.text : "")).join("");
-    const cleaned = combined
+    return combined
       .split("\n")
-      .filter((line) => !/^\s*(REASONING|HTML)\s*:?\s*$/i.test(line))
+      .filter((line) => !/^\s*(PREAMBLE|REASONING|HTML)\s*:?\s*$/i.test(line))
       .join("\n")
       .trim();
-    return cleaned;
   }, [messages]);
 
   // Extract HTML content and compute fallback reasoning from text parts
-  const { htmlContent, fallbackReasoning } = useMemo(() => {
+  const { htmlContent, preambleFromText } = useMemo(() => {
     const assistantMessages = messages.filter((m) => m.role === "assistant");
     const lastMessage = assistantMessages[assistantMessages.length - 1];
-    if (!lastMessage?.parts) return { htmlContent: "", fallbackReasoning: "" };
+    if (!lastMessage?.parts) return { htmlContent: "", preambleFromText: "" };
     const textParts = lastMessage.parts.filter((part) => part.type === "text");
     const rawText = textParts
       .map((part) => ("text" in part ? part.text : ""))
       .join("");
     return {
       htmlContent: extractHtmlOnly(rawText),
-      fallbackReasoning: extractFallbackReasoning(rawText),
+      preambleFromText: extractPreamble(rawText),
     };
   }, [messages]);
 
   const displayReasoning = useMemo(() => {
-    const raw = (reasoningContent || fallbackReasoning) || "";
+    const raw = (preambleContent || preambleFromText) || "";
     // Collapse extra blank lines between bullet points and normalize line endings
     return raw.replace(/\r/g, "").replace(/\n\s*\n+/g, "\n");
-  }, [reasoningContent, fallbackReasoning]);
+  }, [preambleContent, preambleFromText]);
 
   // Check if we have any content to show
   const hasReasoning = displayReasoning.length > 0;
