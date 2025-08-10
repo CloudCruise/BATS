@@ -4,7 +4,6 @@ import {
   createContext,
   useContext,
   useState,
-  useEffect,
   type ComponentProps,
   type ReactNode,
   forwardRef,
@@ -41,14 +40,6 @@ export function WebPreview({
   ...props
 }: WebPreviewProps) {
   const [url, setUrlState] = useState(defaultUrl);
-
-  // Update URL when defaultUrl changes
-  useEffect(() => {
-    if (defaultUrl && defaultUrl !== url) {
-      setUrlState(defaultUrl);
-    }
-  }, [defaultUrl, url]);
-
   const setUrl = (u: string) => {
     setUrlState(u);
     onUrlChange?.(u);
@@ -147,7 +138,6 @@ export const WebPreviewBody = forwardRef<HTMLIFrameElement, WebPreviewBodyProps>
   const { url } = useWebPreview();
   // Avoid passing empty string to iframe src (which would briefly load about:blank)
   const resolvedSrc = (src && src.length > 0 ? src : undefined) ?? (url && url.length > 0 ? url : undefined);
-
   return (
     <div className="flex-1">
       <iframe
