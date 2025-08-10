@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     // Note: if using Langfuse tracing, wire it here with your preferred client
 
     const result = await streamText({
-      model: openai("gpt-5-mini"),
+      model: openai("gpt-5"),
       system: systemPrompt,
       messages: convertToModelMessages(messages),
       experimental_telemetry: {
