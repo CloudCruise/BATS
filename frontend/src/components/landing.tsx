@@ -204,8 +204,8 @@ export function Landing({
           <div className="w-full max-w-3xl z-10">
             <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 shadow-xl">
               <h3 className="text-xl font-semibold mb-6 text-white/95 flex items-center gap-2">
-                <span>📚</span>
-                Recent websites
+                <span>🧪</span>
+                Recent test cases
               </h3>
               <div className="flex flex-col gap-2">
                 {savedTestCases.map((testCase) => (
