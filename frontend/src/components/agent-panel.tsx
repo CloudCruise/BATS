@@ -28,21 +28,34 @@ export function AgentPanel({ currentUrl, agentRunning, onAgentToggle, actions = 
             <div className="p-4 border-b">
               <h3 className="text-sm font-medium text-foreground">Activity Feed</h3>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30">
               <div className="p-4 space-y-3">
-                {uiMessages.map((message) => (
-                  <div key={message.id}>
-                    <Reasoning defaultOpen={true} isStreaming={agentRunning}>
-                      <ReasoningTrigger />
-                      <ReasoningContent>
-                        {message.parts
-                          .map((p) => p.text)
-                          .filter((t) => t && !/^\s*HTML\s*$/i.test(t))
-                          .join('\n') || 'Thinking...'}
-                      </ReasoningContent>
-                    </Reasoning>
-                  </div>
-                ))}
+                {uiMessages
+                  .filter((message) => {
+                    // Filter out messages that only contain reasoning content
+                    // since reasoning is handled by the actions system
+                    const hasNonReasoningContent = message.parts.some(part => 
+                      part.type !== 'reasoning' && 
+                      part.text && 
+                      part.text.trim() !== '' &&
+                      !/^\s*HTML\s*$/i.test(part.text)
+                    );
+                    return hasNonReasoningContent;
+                  })
+                  .map((message) => (
+                    <div key={message.id}>
+                      <Reasoning defaultOpen={true} isStreaming={agentRunning}>
+                        <ReasoningTrigger />
+                        <ReasoningContent>
+                          {message.parts
+                            .filter((p) => p.type !== 'reasoning') // Exclude reasoning parts
+                            .map((p) => p.text)
+                            .filter((t) => t && !/^\s*HTML\s*$/i.test(t))
+                            .join('\n') || 'Thinking...'}
+                        </ReasoningContent>
+                      </Reasoning>
+                    </div>
+                  ))}
                 {actions.map((action) => (
                   <div key={action.id}>
                     {action.type === 'reasoning' && (
@@ -79,7 +92,7 @@ export function AgentPanel({ currentUrl, agentRunning, onAgentToggle, actions = 
             </div>
           </div>
         ) : (
-          <div className="flex-1 p-4 space-y-4">
+          <div className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 p-4 space-y-4">
             {!agentRunning && actions.length === 0 && (
               <>
                 <div className="space-y-2">

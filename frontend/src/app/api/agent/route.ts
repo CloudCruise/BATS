@@ -25,11 +25,12 @@ export async function POST(req: Request) {
       : (incomingMessages as ModelMessage[]);
 
     const result = await streamText({
-      model: openai('gpt-5'),
+      model: openai('gpt-5-mini'),
       tools,
       stopWhen: stepCountIs(3),
       toolChoice: 'auto',
       messages: modelMessages,
+      experimental_telemetry: { isEnabled: true },
       system: systemPrompt,
     });
 

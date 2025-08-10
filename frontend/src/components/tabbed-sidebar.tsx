@@ -62,7 +62,7 @@ export function TabbedSidebar({ open, currentUrl, agentRunning, onAgentToggle, a
 
   return (
     <div
-      className="border-l bg-background shadow-sm flex flex-col h-full"
+      className="border-l bg-background shadow-sm flex flex-col h-full min-h-0"
       style={{ width: `${widthPx}px`, minWidth: `${widthPx}px` }}
     >
       {/* Drag handle */}

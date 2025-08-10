@@ -226,11 +226,11 @@ export function MainConsole({
       </SidebarInset>
       {/* Right Sidebar */}
       <div 
-        className={`transition-all duration-300 ease-in-out overflow-hidden ${
+        className={`transition-all duration-300 ease-in-out overflow-hidden h-svh max-h-svh ${
           rightOpen ? 'w-[380px] min-w-[380px]' : 'w-0 min-w-0'
         }`}
       >
-        <div className={`transition-opacity duration-300 ${rightOpen ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`h-full transition-opacity duration-300 ${rightOpen ? 'opacity-100' : 'opacity-0'}`}>
           <TabbedSidebar 
             open={rightOpen} 
             currentUrl={activeUrl}
