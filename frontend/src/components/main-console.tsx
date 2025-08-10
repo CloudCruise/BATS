@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { BotIcon } from "lucide-react";
 import { StreamingWebPreview } from "@/components/streaming-web-preview";
 import { UIMessage } from "@ai-sdk/react";
+import { Tabs, TabsTrigger, TabsList, TabsContent } from "./ui/tabs";
 
 type SavedSite = { id: string; title: string; url: string; createdAt: number };
 
@@ -109,19 +110,6 @@ export function MainConsole({
     }
   }, [initialUrl]);
 
-  const items = sites.map((s) => ({ name: s.title, url: s.url }));
-
-  const removeSite = (targetUrl: string) => {
-    setSites((prev) => {
-      const next = prev.filter((s) => s.url !== targetUrl);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      if (activeUrl === targetUrl) {
-        setActiveUrl(next[0]?.url ?? "");
-      }
-      return next;
-    });
-  };
-
   return (
     <SidebarProvider
       style={
@@ -147,38 +135,47 @@ export function MainConsole({
         <div className="flex flex-1 flex-col">
           <div className="flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 p-4 md:p-6">
-              <div className="relative h-[calc(100vh-8rem)] rounded-lg border">
-                {isGenerating ? (
-                  <StreamingWebPreview
-                    messages={messages}
-                    isStreaming={isGenerating}
-                  />
-                ) : (
-                  <WebPreview
-                    defaultUrl={activeUrl}
-                    onUrlChange={(u) => setActiveUrl(u)}
-                    style={{ height: "100%" }}
-                  >
-                    <WebPreviewNavigation className="justify-between">
-                      <div className="flex-1 min-w-0">
-                        <WebPreviewUrl src={activeUrl} />
-                      </div>
-                      <div className="shrink-0 ml-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          type="button"
-                          className="whitespace-nowrap"
-                        >
-                          <BotIcon className="w-4 h-4 mr-2" />
-                          Agent Mode
-                        </Button>
-                      </div>
-                    </WebPreviewNavigation>
-                    <WebPreviewBody src={activeUrl} />
-                  </WebPreview>
-                )}
-              </div>
+              <Tabs defaultValue="streaming">
+                <div className="flex justify-end">
+                  <TabsList>
+                    <TabsTrigger value="streaming">Streaming</TabsTrigger>
+                    <TabsTrigger value="code">Code</TabsTrigger>
+                  </TabsList>
+                </div>
+                <div className="relative h-[calc(100vh-8rem)] rounded-lg border">
+                  <TabsContent value="streaming">
+                    <StreamingWebPreview
+                      messages={messages}
+                      isStreaming={isGenerating}
+                    />
+                  </TabsContent>
+                  <TabsContent value="code" className="h-full">
+                    <WebPreview
+                      defaultUrl={activeUrl}
+                      onUrlChange={(u) => setActiveUrl(u)}
+                      style={{ height: "100%" }}
+                    >
+                      <WebPreviewNavigation className="justify-between">
+                        <div className="flex-1 min-w-0">
+                          <WebPreviewUrl src={activeUrl} />
+                        </div>
+                        <div className="shrink-0 ml-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            type="button"
+                            className="whitespace-nowrap"
+                          >
+                            <BotIcon className="w-4 h-4 mr-2" />
+                            Agent Mode
+                          </Button>
+                        </div>
+                      </WebPreviewNavigation>
+                      <WebPreviewBody src={activeUrl} />
+                    </WebPreview>
+                  </TabsContent>
+                </div>
+              </Tabs>
             </div>
           </div>
         </div>

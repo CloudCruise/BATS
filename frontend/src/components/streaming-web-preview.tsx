@@ -1,23 +1,26 @@
-"use client"
+"use client";
 
-import { useMemo } from "react"
-import { Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning"
-import { UIMessage } from "@ai-sdk/react"
+import { useMemo } from "react";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from "@/components/ai-elements/reasoning";
+import { UIMessage } from "@ai-sdk/react";
 
 type StreamingWebPreviewProps = {
-  messages: UIMessage[]
-  isStreaming?: boolean
-  title?: string
-}
+  messages: UIMessage[];
+  isStreaming?: boolean;
+  title?: string;
+};
 
 export function StreamingWebPreview({
   messages,
   isStreaming = false,
   title = "Generating website...",
 }: StreamingWebPreviewProps) {
-
   function extractHtmlOnly(raw: string): string {
     if (!raw) return "";
     let t = raw.replace(/```html\s*/gi, "").replace(/```/g, "");
@@ -42,8 +45,12 @@ export function StreamingWebPreview({
     const assistantMessages = messages.filter((m) => m.role === "assistant");
     const lastMessage = assistantMessages[assistantMessages.length - 1];
     if (!lastMessage?.parts) return "";
-    const reasoningParts = lastMessage.parts.filter((part) => part.type === "reasoning");
-    return reasoningParts.map((part) => ("text" in part ? part.text : "")).join("");
+    const reasoningParts = lastMessage.parts.filter(
+      (part) => part.type === "reasoning"
+    );
+    return reasoningParts
+      .map((part) => ("text" in part ? part.text : ""))
+      .join("");
   }, [messages]);
 
   // Extract HTML content and compute fallback reasoning from text parts
@@ -62,7 +69,8 @@ export function StreamingWebPreview({
   }, [messages]);
 
   // Check if we have any content to show
-  const hasReasoning = reasoningContent.length > 0 || fallbackReasoning.length > 0;
+  const hasReasoning =
+    reasoningContent.length > 0 || fallbackReasoning.length > 0;
   const hasHtml = htmlContent.length > 0;
 
   const lines = useMemo(() => {
@@ -72,6 +80,17 @@ export function StreamingWebPreview({
     return htmlContent.split("\n");
   }, [htmlContent]);
 
+  console.log(
+    "MESSAGE STREAMING",
+    messages,
+    htmlContent,
+    fallbackReasoning,
+    reasoningContent,
+    isStreaming,
+    hasHtml,
+    hasReasoning
+  );
+
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Header */}
@@ -79,29 +98,31 @@ export function StreamingWebPreview({
         <Loader2 className={`h-5 w-5 ${!isStreaming ? "" : "animate-spin"}`} />
         <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
         {isStreaming && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="ml-auto rounded-full" 
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto rounded-full"
             disabled
           >
             Generating...
           </Button>
         )}
       </div>
-
       {/* Reasoning Section - Stacked on top */}
       {hasReasoning && (
-        <div className="border-b bg-muted/10 p-4">
-          <Reasoning 
-            isStreaming={isStreaming && (reasoningContent.length > 0 || fallbackReasoning.length > 0)} 
-            defaultOpen={true}
-            className="w-full"
-          >
-            <ReasoningTrigger />
-            <ReasoningContent>{reasoningContent || fallbackReasoning}</ReasoningContent>
-          </Reasoning>
-        </div>
+        <Reasoning
+          isStreaming={
+            isStreaming &&
+            (reasoningContent.length > 0 || fallbackReasoning.length > 0)
+          }
+          defaultOpen={true}
+          className="w-full m-4"
+        >
+          <ReasoningTrigger />
+          <ReasoningContent className="italic text-secondary-foreground">
+            {reasoningContent || fallbackReasoning}
+          </ReasoningContent>
+        </Reasoning>
       )}
 
       {/* HTML Code Section - Takes remaining space */}
@@ -147,5 +168,5 @@ export function StreamingWebPreview({
         </div>
       </div>
     </div>
-  )
+  );
 }
