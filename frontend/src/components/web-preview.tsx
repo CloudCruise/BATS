@@ -92,12 +92,14 @@ export const WebPreviewBody = forwardRef<HTMLIFrameElement, WebPreviewBodyProps>
   ref
 ) {
   const { url } = useWebPreview();
+  // Avoid passing empty string to iframe src (which would briefly load about:blank)
+  const resolvedSrc = (src && src.length > 0 ? src : undefined) ?? (url && url.length > 0 ? url : undefined);
   return (
     <div className="flex-1">
       <iframe
         ref={ref}
         className={cn("size-full", className)}
-        src={src ?? (url || undefined)}
+        src={resolvedSrc}
         title="Preview"
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
         {...props}

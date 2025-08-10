@@ -136,6 +136,8 @@ export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGener
     setAgentRunning(true);
     
     try {
+      // Guard iframe from navigation while agent is running
+      page.enableNavGuards(true);
       if (CONTINUOUS_MODE) {
         await runner.runLoop("Disrupt browser automation with new buttons, moved buttons, and more.");
       } else {
@@ -143,6 +145,8 @@ export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGener
         await runner.runIterations("Disrupt browser automation with new buttons, moved buttons, and more.", 3);
       }
     } finally {
+      // Remove guards and stop running state
+      page.enableNavGuards(false);
       setAgentRunning(false);
     }
   };

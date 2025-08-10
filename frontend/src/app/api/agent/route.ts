@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { generateText, tool, stepCountIs, type ModelMessage } from "ai";
+import { generateText, streamText, tool, stepCountIs, type ModelMessage } from "ai";
 import { z } from "zod";
 import { toolSchemas } from "@/agent/sub-agents";
 import { fetchAndCompilePrompt } from "@/lib/langfuse";
@@ -9,11 +9,12 @@ export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
   try {
-    const { messages, activeTools, traceId, iteration } = (await req.json()) as {
+    const { messages, activeTools, traceId, iteration, stream } = (await req.json()) as {
       messages: ModelMessage[];
       activeTools?: string[];
       traceId?: string;
       iteration?: number;
+      stream?: boolean;
     };
     const list = activeTools ?? Object.keys(toolSchemas);
     const tools = Object.fromEntries(
@@ -37,26 +38,42 @@ export async function POST(req: Request) {
     const generation = trace.generation({
       name: "agent-llm",
       model: "gpt-5-mini",
-      input: { messages, systemPrompt },
+      input: { systemPrompt, messages },
     });
     
-    const { text, toolCalls, response } = await generateText({
-      model: openai("gpt-5-mini"),
-      tools,
-      stopWhen: stepCountIs(1),
-      messages,
-      system: systemPrompt,
-    });
-    await generation.end({
-      output: { text, toolCalls, responseMessages: response.messages },
-    });
-    await trace.update({ output: { text, toolCalls } });
-    await langfuse.shutdownAsync();
-    
-    return new Response(JSON.stringify({ text, toolCalls, responseMessages: response.messages, traceId: trace.id }), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
+    if (stream) {
+      const result = await streamText({
+        model: openai("gpt-5-mini"),
+        tools,
+        stopWhen: stepCountIs(5),
+        messages,
+        system: systemPrompt,
+        onFinish: async ({ text, toolCalls, response: streamResponse }) => {
+          await generation.end({ output: { text, toolCalls, responseMessages: (await streamResponse).messages } });
+          await trace.update({ output: { text, toolCalls } });
+          await langfuse.shutdownAsync();
+        },
+      });
+      return result.toTextStreamResponse();
+    } else {
+      const { text, toolCalls, response } = await generateText({
+        model: openai("gpt-5-mini"),
+        tools,
+        stopWhen: stepCountIs(1),
+        messages,
+        system: systemPrompt,
+      });
+      await generation.end({
+        output: { text, toolCalls, responseMessages: response.messages },
+      });
+      await trace.update({ output: { text, toolCalls } });
+      await langfuse.shutdownAsync();
+      
+      return new Response(JSON.stringify({ text, toolCalls, responseMessages: response.messages, traceId: trace.id }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
   } catch (error) {
     try {
       const langfuse = new Langfuse();

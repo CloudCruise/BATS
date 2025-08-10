@@ -6,6 +6,7 @@ export class PageAgent {
   private iframe: HTMLIFrameElement;
   private win: Window | null = null;
   private tools = buildToolsRegistry();
+  private removeNavGuards: (() => void) | null = null;
 
   constructor(iframe: HTMLIFrameElement) {
     this.iframe = iframe;
@@ -18,6 +19,7 @@ export class PageAgent {
   }
 
   dispose() {
+    this.enableNavGuards(false);
     this.win = null;
   }
 
@@ -45,6 +47,59 @@ export class PageAgent {
     const win = this.ensureWindow();
     const doc = win.document;
     return tool.run({ win, doc, getStableSelector: this.getStableSelector }, args);
+  }
+
+  // Prevents in-iframe navigations (links, form submits, window.open, location changes)
+  enableNavGuards(enable: boolean) {
+    const win = this.win ?? this.iframe.contentWindow;
+    if (!win) return;
+    const doc = win.document;
+    if (enable) {
+      if (this.removeNavGuards) return; // already enabled
+      const clickHandler = (event: Event) => {
+        const target = event.target as Element | null;
+        const nearest = (target as HTMLElement | null)?.closest?.bind(target as HTMLElement | null);
+        const anchor = typeof nearest === 'function' ? nearest('a') as HTMLAnchorElement | null : null;
+        if (anchor) {
+          const href = anchor.getAttribute('href') ?? '';
+          const isHashOnly = href.startsWith('#');
+          const isJs = href.toLowerCase().startsWith('javascript:');
+          if (!isHashOnly && !isJs) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+          return;
+        }
+      };
+      const submitHandler = (event: Event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      };
+      doc.addEventListener('click', clickHandler, true);
+      doc.addEventListener('submit', submitHandler, true);
+
+      const originalOpen = win.open.bind(win);
+      // Block popups but do not override read-only Location methods (assign/replace)
+      (win as unknown as { open: (...args: unknown[]) => Window | null }).open = () => null;
+      // Optionally block history mutations that some scripts use instead of location
+      const originalPushState = win.history.pushState.bind(win.history);
+      const originalReplaceState = win.history.replaceState.bind(win.history);
+      win.history.pushState = ((..._args: Parameters<typeof originalPushState>) => {}) as typeof win.history.pushState;
+      win.history.replaceState = ((..._args: Parameters<typeof originalReplaceState>) => {}) as typeof win.history.replaceState;
+
+      this.removeNavGuards = () => {
+        doc.removeEventListener('click', clickHandler, true);
+        doc.removeEventListener('submit', submitHandler, true);
+        (win as unknown as { open: typeof originalOpen }).open = originalOpen;
+        win.history.pushState = originalPushState;
+        win.history.replaceState = originalReplaceState;
+      };
+      return;
+    }
+    if (this.removeNavGuards) {
+      this.removeNavGuards();
+      this.removeNavGuards = null;
+    }
   }
 
   private ensureWindow(): Window {
