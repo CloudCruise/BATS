@@ -194,9 +194,9 @@
         },
       });
 
-      let dataUrl = canvas.toDataURL("image/webp", 0.6);
+      let dataUrl = canvas.toDataURL("image/webp", 0.8);
       if (dataUrl.length > 350_000)
-        dataUrl = canvas.toDataURL("image/webp", 0.45);
+        dataUrl = canvas.toDataURL("image/webp", 0.8);
       return dataUrl;
     } catch {
       return null;

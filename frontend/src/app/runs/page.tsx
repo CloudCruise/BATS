@@ -27,8 +27,8 @@ export default function RunsPage() {
   }, []);
 
   return (
-    <SidebarInset className="bg-transparent">
-      <div className="flex w-full max-w-screen-md flex-col gap-4 p-4 text-white">
+    <SidebarInset>
+      <div className="flex w-full max-w-screen-md flex-col gap-4 p-4 text-white mx-auto">
         <h1 className="text-2xl font-bold">All Runs</h1>
         {loading ? (
           <div className="flex w-full justify-center">
