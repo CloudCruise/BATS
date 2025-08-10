@@ -1,6 +1,20 @@
 "use client";
 
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarInset, SidebarMenu, SidebarMenuAction, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarSeparator, useSidebar } from "@/components/ui/sidebar";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarSeparator,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { FilesIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,7 +31,15 @@ export type AppSidebarProps = {
   variant?: "sidebar" | "floating" | "inset";
 };
 
-export function AppSidebar({ items, activeUrl, onSelect, onDelete, onCleanup, className, variant = "inset" }: AppSidebarProps) {
+export function AppSidebar({
+  items,
+  activeUrl,
+  onSelect,
+  onDelete,
+  onCleanup,
+  className,
+  variant = "inset",
+}: AppSidebarProps) {
   return (
     <Sidebar variant={variant} collapsible="icon" className={className}>
       <SidebarRail />
@@ -83,5 +105,3 @@ export function AppSidebar({ items, activeUrl, onSelect, onDelete, onCleanup, cl
     </Sidebar>
   );
 }
-
-

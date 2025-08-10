@@ -131,13 +131,13 @@ export function MainConsole({
         } as React.CSSProperties
       }
     >
-      <AppSidebar
+      {/* <AppSidebar
         variant="inset"
         items={items}
         activeUrl={activeUrl}
         onSelect={(u) => setActiveUrl(u)}
         onDelete={(u) => removeSite(u)}
-      />
+      /> */}
       <SidebarInset>
         <SiteHeader
           onGenerateNew={onBackToPrompt}

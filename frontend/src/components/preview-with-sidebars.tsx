@@ -75,12 +75,12 @@ export function PreviewWithSidebars({ url, onBackToPrompt }: PreviewProps) {
       style={{ "--header-height": "56px" } as React.CSSProperties}
     >
       {/* Left Sidebar */}
-      <AppSidebar
+      {/* <AppSidebar
         items={items}
         activeUrl={activeUrl}
         onSelect={(u) => setActiveUrl(u)}
         onDelete={(u) => removeSite(u)}
-      />
+      /> */}
       {/* Main inset */}
       <SidebarInset className="gap-2">
         <SiteHeader
