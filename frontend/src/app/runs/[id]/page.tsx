@@ -14,6 +14,8 @@ import { TestCase } from "@/types/testcase";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Carousel } from "@/components/carousel";
+import { Bot } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function RunPage() {
   const { id } = useParams();
@@ -43,9 +45,11 @@ export default function RunPage() {
   }, [id]);
 
   return (
-    <SidebarInset className="bg-transparent">
-      <div className="flex w-full h-full flex-col gap-4 p-4 h-full text-white">
-        <h1 className="text-2xl font-bold">Run {id}</h1>
+    <SidebarInset>
+      <div className="flex w-full h-full flex-col gap-4 p-4  text-white">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Run {id}</h1>
+        </div>
         {run && (
           <div className="grid grid-cols-12 gap-4 h-full">
             <div className="flex flex-col gap-4 col-span-4 h-full">
@@ -82,9 +86,7 @@ export default function RunPage() {
                   </div>
                   <div className="flex justify-between gap-2 items-center">
                     <div className="text-sm font-medium">Agent</div>
-                    <div className="text-xs text-white/60">
-                      {run.agentName}
-                    </div>
+                    <div className="text-xs text-white/60">{run.agentName}</div>
                   </div>
                 </CardContent>
               </Card>
