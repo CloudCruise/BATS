@@ -268,3 +268,31 @@
   animation-delay: 12s;
   font-size: 1.2rem;
 }
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.5;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 30px rgba(249, 115, 22, 0.6);
+  }
+}
+
+@keyframes ring-rotate {
+  to { transform: rotate(360deg); }
+}
+
+.agent-button-glow {
+  position: absolute;
+  inset: -4px;
+  border-radius: 12px;
+  border: 3px solid transparent;
+  background:
+    linear-gradient(var(--background), var(--background)) padding-box,
+    conic-gradient(from 0deg, #ef4444, #f97316, #eab308, #ef4444) border-box;
+  animation: ring-rotate 6s linear infinite, pulse-glow 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}

@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
   Reasoning,
   ReasoningContent,
-  ReasoningTrigger,
 } from "@/components/ai-elements/reasoning";
 import { UIMessage } from "@ai-sdk/react";
 
@@ -34,43 +33,80 @@ export function StreamingWebPreview({
     return t.trim();
   }
 
-  function extractFallbackReasoning(raw: string): string {
+  function extractPreamble(raw: string): string {
     if (!raw) return "";
-    const m = raw.match(/^\s*REASONING[\s\S]*?(?=<!doctype html>|<html)/i);
-    return m ? m[0].trim() : "";
+    const text = raw.replace(/\r/g, "");
+    // Prefer explicit PREAMBLE → HTML section
+    const byHeaders = text.match(
+      /(?:^|\n)\s*(?:1\)\s*)?PREAMBLE\s*:?\s*\n([\s\S]*?)(?:\n\s*(?:2\)\s*)?HTML\b)/i
+    );
+    if (byHeaders && byHeaders[1]) {
+      return byHeaders[1]
+        .split("\n")
+        .filter((line) => !/^\s*(PREAMBLE|HTML)\s*:?\s*$/i.test(line))
+        .join("\n")
+        .trim();
+    }
+    // Otherwise, anything before <!doctype html> or <html>
+    const idx = text.search(/<!doctype html>|<html[\s>]/i);
+    if (idx > 0) {
+      return text
+        .slice(0, idx)
+        .split("\n")
+        .filter((line) => !/^\s*(PREAMBLE|HTML)\s*:?\s*$/i.test(line))
+        .join("\n")
+        .trim();
+    }
+    return "";
   }
-
-  // Extract reasoning content from messages (structured parts)
-  const reasoningContent = useMemo(() => {
+  // Extract PREAMBLE content (preferred) or fallback to 'reasoning' parts
+  const preambleContent = useMemo(() => {
     const assistantMessages = messages.filter((m) => m.role === "assistant");
     const lastMessage = assistantMessages[assistantMessages.length - 1];
     if (!lastMessage?.parts) return "";
+    const textParts = lastMessage.parts.filter((part) => part.type === "text");
+    const rawText = textParts
+      .map((part) => ("text" in part ? part.text : ""))
+      .join("");
+    const fromText = extractPreamble(rawText);
+    if (fromText) return fromText;
+    // Fallback: use 'reasoning' parts if present
     const reasoningParts = lastMessage.parts.filter(
       (part) => part.type === "reasoning"
     );
-    return reasoningParts
+    const combined = reasoningParts
       .map((part) => ("text" in part ? part.text : ""))
       .join("");
+    return combined
+      .split("\n")
+      .filter((line) => !/^\s*(PREAMBLE|REASONING|HTML)\s*:?\s*$/i.test(line))
+      .join("\n")
+      .trim();
   }, [messages]);
 
   // Extract HTML content and compute fallback reasoning from text parts
-  const { htmlContent, fallbackReasoning } = useMemo(() => {
+  const { htmlContent, preambleFromText } = useMemo(() => {
     const assistantMessages = messages.filter((m) => m.role === "assistant");
     const lastMessage = assistantMessages[assistantMessages.length - 1];
-    if (!lastMessage?.parts) return { htmlContent: "", fallbackReasoning: "" };
+    if (!lastMessage?.parts) return { htmlContent: "", preambleFromText: "" };
     const textParts = lastMessage.parts.filter((part) => part.type === "text");
     const rawText = textParts
       .map((part) => ("text" in part ? part.text : ""))
       .join("");
     return {
       htmlContent: extractHtmlOnly(rawText),
-      fallbackReasoning: extractFallbackReasoning(rawText),
+      preambleFromText: extractPreamble(rawText),
     };
   }, [messages]);
 
+  const displayReasoning = useMemo(() => {
+    const raw = preambleContent || preambleFromText || "";
+    // Collapse extra blank lines between bullet points and normalize line endings
+    return raw.replace(/\r/g, "").replace(/\n\s*\n+/g, "\n");
+  }, [preambleContent, preambleFromText]);
+
   // Check if we have any content to show
-  const hasReasoning =
-    reasoningContent.length > 0 || fallbackReasoning.length > 0;
+  const hasReasoning = displayReasoning.length > 0;
   const hasHtml = htmlContent.length > 0;
 
   const lines = useMemo(() => {
@@ -110,19 +146,15 @@ export function StreamingWebPreview({
       </div>
       {/* Reasoning Section - Stacked on top */}
       {hasReasoning && (
-        <Reasoning
-          isStreaming={
-            isStreaming &&
-            (reasoningContent.length > 0 || fallbackReasoning.length > 0)
-          }
-          defaultOpen={true}
-          className="w-full m-4"
-        >
-          <ReasoningTrigger />
-          <ReasoningContent className="italic text-secondary-foreground">
-            {reasoningContent || fallbackReasoning}
-          </ReasoningContent>
-        </Reasoning>
+        <div className="border-b bg-muted/10 p-4">
+          <Reasoning
+            isStreaming={isStreaming && hasReasoning}
+            open={true}
+            className="w-full"
+          >
+            <ReasoningContent>{displayReasoning}</ReasoningContent>
+          </Reasoning>
+        </div>
       )}
 
       {/* HTML Code Section - Takes remaining space */}
@@ -133,8 +165,12 @@ export function StreamingWebPreview({
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin mb-4" />
               <div className="text-center space-y-2">
-                <p className="text-lg font-medium">Generating website...</p>
-                <p className="text-sm">AI is creating your custom HTML page</p>
+                <p className="text-lg font-medium">
+                  Searching the web for reference pages...
+                </p>
+                <p className="text-sm">
+                  Gathering examples and patterns to guide generation
+                </p>
               </div>
             </div>
           ) : (

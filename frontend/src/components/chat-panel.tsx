@@ -144,12 +144,43 @@ export function ChatPanel({
                       // For assistant messages, render parts normally
                       message.parts?.map((part, i) => {
                         switch (part.type) {
-                          case "text":
+                          case "text": {
+                            const raw = "text" in part ? part.text || "" : "";
+                            const match = raw
+                              .replace(/\r/g, "")
+                              .match(/(?:^|\n)\s*(?:1\)\s*)?PREAMBLE\s*:?\s*\n([\s\S]*?)(?:\n\s*(?:2\)\s*)?HTML\b)/i);
+                            const preamble = match && match[1]
+                              ? match[1]
+                                  .split("\n")
+                                  .filter((line) => !/^\s*(PREAMBLE|HTML)\s*:?\s*$/i.test(line))
+                                  .join("\n")
+                                  .replace(/\n\s*\n+/g, "\n")
+                                  .trim()
+                              : "";
+
+                            if (preamble) {
+                              return (
+                                <Reasoning
+                                  key={`${message.id}-${i}`}
+                                  className="w-full"
+                                  defaultOpen={true}
+                                  isStreaming={
+                                    status === "streaming" &&
+                                    message.id === messages[messages.length - 1]?.id &&
+                                    i === (message.parts?.length || 1) - 1
+                                  }
+                                >
+                                  <ReasoningTrigger />
+                                  <ReasoningContent>{preamble}</ReasoningContent>
+                                </Reasoning>
+                              );
+                            }
                             return (
                               <Response key={`${message.id}-${i}`}>
-                                {"text" in part ? part.text : ""}
+                                {raw}
                               </Response>
                             );
+                          }
                           case "reasoning":
                             return (
                               <Reasoning
