@@ -5,10 +5,12 @@ import { Landing } from "@/components/landing";
 import { MainConsole } from "@/components/main-console";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
+import { createUserPrompt } from "@/utils/prompt-enrichment";
 
 export default function Home() {
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
-  
+  const [initialPrompt, setInitialPrompt] = useState<string>("");
+
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({ api: "/api/generate" }),
   });
@@ -43,40 +45,49 @@ export default function Home() {
     };
   }, [status, generatedUrl]);
 
-  const handleGenerate = async (prompt: string, difficulty?: string, websiteType?: string) => {
+  const handleGenerate = async (
+    prompt: string,
+    difficulty?: string,
+    websiteType?: string
+  ) => {
+    // Store the initial prompt for display in chat
+    setInitialPrompt(prompt);
+
     // Navigate to main console immediately
     setGeneratedUrl("generating");
-    
-    // Include generation parameters in the message
-    const messageText = `Generate a website with the following parameters:
-Prompt: ${prompt}
-Difficulty: ${difficulty || 'medium'}
-Website Type: ${websiteType || 'generic'}`;
-    
+
+    const userPrompt = createUserPrompt(
+      prompt,
+      difficulty || "medium",
+      websiteType || "generic"
+    );
+
     // Send generation request
-    sendMessage({ text: messageText });
+    sendMessage({ text: JSON.stringify({ prompt: userPrompt }) });
   };
 
   // Show main console if we have a URL (including during generation)
   if (generatedUrl) {
     return (
-      <MainConsole 
+      <MainConsole
         initialUrl={generatedUrl === "generating" ? undefined : generatedUrl}
         onBackToPrompt={() => {
           setGeneratedUrl(null);
+          setInitialPrompt("");
         }}
         messages={messages}
-        isGenerating={status === 'streaming'}
+        isGenerating={status === "streaming"}
+        initialPrompt={initialPrompt}
       />
     );
   }
 
   // Show landing page by default
   return (
-    <Landing 
-      onGenerate={handleGenerate} 
+    <Landing
+      onGenerate={handleGenerate}
       onOpenExisting={(url) => setGeneratedUrl(url)}
-      isLoading={status === 'streaming'} 
+      isLoading={status === "streaming"}
     />
   );
 }

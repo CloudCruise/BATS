@@ -7,36 +7,50 @@ import {
   PromptInputTextarea,
   PromptInputToolbar,
   PromptInputSubmit,
-} from '@/components/ai-elements/prompt-input';
-import { useChat, type UIMessage } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+} from "@/components/ai-elements/prompt-input";
+import type { UIMessage } from "@ai-sdk/react";
+import type { ChatStatus } from "ai";
 import {
   Reasoning,
   ReasoningContent,
   ReasoningTrigger,
-} from '@/components/ai-elements/reasoning';
+} from "@/components/ai-elements/reasoning";
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
-} from '@/components/ai-elements/conversation';
-import { Loader } from '@/components/ai-elements/loader';
-import { Message, MessageContent } from '@/components/ai-elements/message';
-import { Response } from '@/components/ai-elements/response';
+} from "@/components/ai-elements/conversation";
+import { Loader } from "@/components/ai-elements/loader";
+import { Message, MessageContent } from "@/components/ai-elements/message";
+import { Response } from "@/components/ai-elements/response";
 
 // Remove the old getMessageText function as we'll handle parts directly
 
 type ChatPanelProps = {
   currentUrl?: string;
+  initialPrompt?: string;
+  messages?: UIMessage[];
+  status?: ChatStatus;
+  onSendMessage?: (message: string) => void;
 };
 
-export function ChatPanel({ currentUrl }: ChatPanelProps) {
+export function ChatPanel({
+  currentUrl,
+  initialPrompt,
+  messages = [],
+  status = "ready",
+  onSendMessage,
+}: ChatPanelProps) {
   const [input, setInput] = useState("");
   const [htmlContent, setHtmlContent] = useState<string | null>(null);
-  
-  const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
-  });
+  const [hasShownInitialPrompt, setHasShownInitialPrompt] = useState(false);
+
+  // Show initial prompt as a display-only message when component mounts
+  useEffect(() => {
+    if (initialPrompt && !hasShownInitialPrompt) {
+      setHasShownInitialPrompt(true);
+    }
+  }, [initialPrompt, hasShownInitialPrompt]);
 
   // Fetch HTML content when currentUrl changes
   useEffect(() => {
@@ -67,13 +81,15 @@ export function ChatPanel({ currentUrl }: ChatPanelProps) {
     e.preventDefault();
     const trimmed = input.trim();
     if (!trimmed) return;
-    
+
     // Include HTML content in the backend message but show only user question in UI
-    const messageWithContext = htmlContent 
+    const messageWithContext = htmlContent
       ? `Current HTML file content:\n\`\`\`html\n${htmlContent}\n\`\`\`\n\nUser question: ${trimmed}`
       : trimmed;
-    
-    sendMessage({ text: messageWithContext });
+
+    if (onSendMessage) {
+      onSendMessage(messageWithContext);
+    }
     setInput("");
   };
 
@@ -95,51 +111,74 @@ export function ChatPanel({ currentUrl }: ChatPanelProps) {
                 <p>Start a conversation with the AI assistant</p>
               </div>
             )}
-            {messages.map((message: UIMessage) => (
-              <Message from={message.role} key={message.id}>
-                <MessageContent>
-                  {message.role === 'user' ? (
-                    // For user messages, extract just the user question part
-                    <Response>
-                      {(() => {
-                        const textPart = message.parts?.[0];
-                        const text = (textPart && 'text' in textPart) ? textPart.text || '' : '';
-                        if (text.includes('User question: ')) {
-                          return text.split('User question: ')[1] || text;
+            {/* Show initial prompt if available */}
+            {hasShownInitialPrompt &&
+              initialPrompt &&
+              messages.length === 0 && (
+                <Message from="user">
+                  <MessageContent>
+                    <Response>{initialPrompt}</Response>
+                  </MessageContent>
+                </Message>
+              )}
+            {messages.map((message: UIMessage) => {
+              return (
+                <Message from={message.role} key={message.id}>
+                  <MessageContent>
+                    {message.role === "user" ? (
+                      // For user messages, extract just the user question part
+                      <Response>
+                        {(() => {
+                          const textPart = message.parts?.[0];
+                          const text =
+                            textPart && "text" in textPart
+                              ? textPart.text || ""
+                              : "";
+                          if (text.includes("User question: ")) {
+                            return text.split("User question: ")[1] || text;
+                          }
+                          return text;
+                        })()}
+                      </Response>
+                    ) : (
+                      // For assistant messages, render parts normally
+                      message.parts?.map((part, i) => {
+                        switch (part.type) {
+                          case "text":
+                            return (
+                              <Response key={`${message.id}-${i}`}>
+                                {"text" in part ? part.text : ""}
+                              </Response>
+                            );
+                          case "reasoning":
+                            return (
+                              <Reasoning
+                                key={`${message.id}-${i}`}
+                                className="w-full"
+                                defaultOpen={true}
+                                isStreaming={
+                                  status === "streaming" &&
+                                  message.id ===
+                                    messages[messages.length - 1]?.id &&
+                                  i === (message.parts?.length || 1) - 1
+                                }
+                              >
+                                <ReasoningTrigger />
+                                <ReasoningContent>
+                                  {"text" in part ? part.text : ""}
+                                </ReasoningContent>
+                              </Reasoning>
+                            );
+                          default:
+                            return null;
                         }
-                        return text;
-                      })()}
-                    </Response>
-                  ) : (
-                    // For assistant messages, render parts normally
-                    message.parts?.map((part, i) => {
-                      switch (part.type) {
-                        case 'text':
-                          return (
-                            <Response key={`${message.id}-${i}`}>
-                              {'text' in part ? part.text : ''}
-                            </Response>
-                          );
-                        case 'reasoning':
-                          return (
-                            <Reasoning
-                              key={`${message.id}-${i}`}
-                              className="w-full"
-                              isStreaming={status === 'streaming' && i === (message.parts?.length || 1) - 1}
-                            >
-                              <ReasoningTrigger />
-                              <ReasoningContent>{'text' in part ? part.text : ''}</ReasoningContent>
-                            </Reasoning>
-                          );
-                        default:
-                          return null;
-                      }
-                    })
-                  )}
-                </MessageContent>
-              </Message>
-            ))}
-            {status === 'streaming' && <Loader />}
+                      })
+                    )}
+                  </MessageContent>
+                </Message>
+              );
+            })}
+            {status === "streaming" && <Loader />}
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>
@@ -157,7 +196,7 @@ export function ChatPanel({ currentUrl }: ChatPanelProps) {
             className="pr-12"
           />
           <PromptInputToolbar>
-            <PromptInputSubmit 
+            <PromptInputSubmit
               className="absolute right-2 bottom-2"
               disabled={!input.trim() || status !== "ready"}
               status={status}

@@ -2,15 +2,28 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChatPanel } from "@/components/chat-panel";
+import type { UIMessage } from "@ai-sdk/react";
+import type { ChatStatus } from "ai";
 
 type ChatSidebarProps = {
   open: boolean;
   currentUrl?: string;
+  initialPrompt?: string;
+  messages?: UIMessage[];
+  status?: ChatStatus;
+  onSendMessage?: (message: string) => void;
 };
 
 const STORAGE_KEY = "bats:right-sidebar-width";
 
-export function ChatSidebar({ open, currentUrl }: ChatSidebarProps) {
+export function ChatSidebar({
+  open,
+  currentUrl,
+  initialPrompt,
+  messages = [],
+  status = "ready",
+  onSendMessage,
+}: ChatSidebarProps) {
   const [widthPx, setWidthPx] = useState<number>(380);
   const dragStartX = useRef<number | null>(null);
   const dragStartWidth = useRef<number>(0);
@@ -62,10 +75,14 @@ export function ChatSidebar({ open, currentUrl }: ChatSidebarProps) {
         aria-hidden
       />
       <div className="h-full w-full">
-        <ChatPanel currentUrl={currentUrl} />
+        <ChatPanel
+          currentUrl={currentUrl}
+          initialPrompt={initialPrompt}
+          messages={messages}
+          status={status}
+          onSendMessage={onSendMessage}
+        />
       </div>
     </div>
   );
 }
-
-
