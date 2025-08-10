@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { unsign } from "@/utils/sign";
 import { persist, read } from "@/utils/persistance";
 import { Run } from "@/types/run";
+import { SuccessContent } from "./success-content";
 
 export const runtime = "nodejs";
 
@@ -23,11 +24,5 @@ export default async function SuccessPage({
     }
   }
 
-  return (
-    <main style={{ fontFamily: "system-ui, sans-serif", padding: 24 }}>
-      <h1>✅ Test finished</h1>
-      <p>Run: {runId || "(unknown)"}.</p>
-      <p>You can close this window.</p>
-    </main>
-  );
+  return <SuccessContent runId={runId} />;
 }
