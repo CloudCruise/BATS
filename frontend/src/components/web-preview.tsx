@@ -6,6 +6,7 @@ import {
   useState,
   type ComponentProps,
   type ReactNode,
+  forwardRef,
 } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -130,18 +131,19 @@ export function WebPreviewUrl({
 export type WebPreviewBodyProps = ComponentProps<"iframe"> & {
   loading?: ReactNode;
 };
-export function WebPreviewBody({
-  className,
-  loading,
-  src,
-  ...props
-}: WebPreviewBodyProps) {
+export const WebPreviewBody = forwardRef<HTMLIFrameElement, WebPreviewBodyProps>(function WebPreviewBody(
+  { className, loading, src, ...props },
+  ref
+) {
   const { url } = useWebPreview();
+  // Avoid passing empty string to iframe src (which would briefly load about:blank)
+  const resolvedSrc = (src && src.length > 0 ? src : undefined) ?? (url && url.length > 0 ? url : undefined);
   return (
     <div className="flex-1">
       <iframe
+        ref={ref}
         className={cn("size-full", className)}
-        src={src ?? (url || undefined)}
+        src={resolvedSrc}
         title="Preview"
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
         {...props}
@@ -149,7 +151,7 @@ export function WebPreviewBody({
       {loading}
     </div>
   );
-}
+});
 
 // Maintained for potential future external placement if needed
 export type WebPreviewOpenExternalProps = ComponentProps<typeof Button> & {
