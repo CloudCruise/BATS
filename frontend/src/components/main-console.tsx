@@ -51,6 +51,10 @@ export function MainConsole({
       parts: Array<{ type: string; text?: string }>;
     }>
   >([]);
+  // Parse the id from the url /generated_websites/[id].html
+  const [testCaseId, setTestCaseId] = useState<string | null>(
+    initialUrl?.split("/").pop()?.split(".")[0] || null
+  );
 
   // Function to validate if a URL still exists
   const validateUrl = async (url: string): Promise<boolean> => {
@@ -179,6 +183,12 @@ export function MainConsole({
     }
   };
 
+  useEffect(() => {
+    if (initialUrl) {
+      setTestCaseId(initialUrl.split("/").pop()?.split(".")[0] || null);
+    }
+  }, [initialUrl]);
+
   // const items = sites.map((s) => ({ name: s.title, url: s.url }));
 
   // const removeSite = (targetUrl: string) => {
@@ -214,40 +224,32 @@ export function MainConsole({
             onGenerateNew={onBackToPrompt}
             onToggleChat={() => setRightOpen((s) => !s)}
             isChatOpen={rightOpen}
+            testCaseId={!isGenerating ? testCaseId : null}
           />
           <div className="flex flex-1 flex-col text-white min-h-0">
             <div className="flex flex-1 flex-col gap-2 min-h-0">
               <div className="flex flex-col gap-4 p-4 md:p-6">
-                <Tabs defaultValue="streaming">
-                  <div className="flex justify-end">
-                    <TabsList className="bg-white/5 text-white/80 border border-white/10">
-                      <TabsTrigger value="streaming">Streaming</TabsTrigger>
-                      <TabsTrigger value="code">Code</TabsTrigger>
-                    </TabsList>
-                  </div>
-                  <div className="relative h-[calc(100vh-8rem)] overflow-hidden rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm">
-                    <TabsContent value="streaming" className="h-full overflow-hidden">
-                      <StreamingWebPreview
-                        messages={messages}
-                        isStreaming={isGenerating}
-                      />
-                    </TabsContent>
-                    <TabsContent value="code" className="h-full">
-                      <WebPreview
-                        defaultUrl={activeUrl}
-                        onUrlChange={(u) => setActiveUrl(u)}
-                        style={{ height: "100%" }}
-                      >
-                        <WebPreviewNavigation className="justify-between border-white/10 bg-white/5 text-white">
-                          <div className="flex-1 min-w-0">
-                            <WebPreviewUrl src={activeUrl} />
-                          </div>
-                        </WebPreviewNavigation>
-                        <WebPreviewBody src={activeUrl} ref={iframeRef} />
-                      </WebPreview>
-                    </TabsContent>
-                  </div>
-                </Tabs>
+                <div className="relative h-[calc(100vh-8rem)] overflow-hidden rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm">
+                  {isGenerating ? (
+                    <StreamingWebPreview
+                      messages={messages}
+                      isStreaming={isGenerating}
+                    />
+                  ) : (
+                    <WebPreview
+                      defaultUrl={activeUrl}
+                      onUrlChange={(u) => setActiveUrl(u)}
+                      style={{ height: "100%" }}
+                    >
+                      <WebPreviewNavigation className="justify-between border-white/10 bg-white/5 text-white">
+                        <div className="flex-1 min-w-0">
+                          <WebPreviewUrl src={activeUrl} />
+                        </div>
+                      </WebPreviewNavigation>
+                      <WebPreviewBody src={activeUrl} ref={iframeRef} />
+                    </WebPreview>
+                  )}
+                </div>
               </div>
             </div>
           </div>
