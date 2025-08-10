@@ -74,7 +74,11 @@ export const moveButton: Tool<z.infer<typeof moveButtonSchema>> = {
     el.setAttribute("data-agent-moved", "true");
     addAgentHighlight(el, { timeout: 0 });
     
-    return { moved: true, left: s.left, top: s.top, selector: args.selector };
+    // Compute numeric coordinates after layout
+    const rect = el.getBoundingClientRect();
+    const x = Math.round(rect.left + (doc.defaultView?.scrollX ?? 0));
+    const y = Math.round(rect.top + (doc.defaultView?.scrollY ?? 0));
+    return { moved: true, left: s.left, top: s.top, x, y, width: Math.round(rect.width), height: Math.round(rect.height), selector: args.selector };
   },
 };
 
@@ -105,7 +109,11 @@ export const insertButton: Tool<z.infer<typeof insertButtonSchema>> = {
     btn.addEventListener('blur', maintainHighlight);
     
     parent.appendChild(btn);
-    return { inserted: true, selector: btn.id ? `#${btn.id}` : '[data-testid="inserted-button"]' };
+    // Compute numeric coordinates after insertion
+    const rect = btn.getBoundingClientRect();
+    const x = Math.round(rect.left + (doc.defaultView?.scrollX ?? 0));
+    const y = Math.round(rect.top + (doc.defaultView?.scrollY ?? 0));
+    return { inserted: true, x, y, width: Math.round(rect.width), height: Math.round(rect.height), selector: btn.id ? `#${btn.id}` : '[data-testid="inserted-button"]' };
   },
 };
 

@@ -311,9 +311,20 @@ export class AgentRunner {
         const argsStr = (() => {
           try { return JSON.stringify(t.args).slice(0, 400); } catch { return '"<unserializable>"'; }
         })();
+        // Prefer coordinate summary for UI actions
+        const coordSummary = (() => {
+          if (!t.output || typeof t.output !== 'object') return null;
+          const o = t.output as Record<string, unknown>;
+          const hasXY = typeof o.x === 'number' && typeof o.y === 'number';
+          const size = (typeof o.width === 'number' && typeof o.height === 'number') ? ` ${o.width}x${o.height}` : '';
+          if (hasXY) return `coords: (${o.x}, ${o.y})${size}${o.selector ? ` selector: ${o.selector}` : ''}`;
+          // fallback: left/top strings if present
+          if (typeof o.left === 'string' && typeof o.top === 'string') return `left/top: ${o.left}, ${o.top}${o.selector ? ` selector: ${o.selector}` : ''}`;
+          return null;
+        })();
         const outStr = t.error
           ? `error: ${t.error}`
-          : (() => { try { return JSON.stringify(t.output).slice(0, 400); } catch { return '"<unserializable>"'; } })();
+          : coordSummary ?? (() => { try { return JSON.stringify(t.output).slice(0, 400); } catch { return '"<unserializable>"'; } })();
         return `- ${t.name} ${argsStr} -> ${outStr}`;
       }).join('\n');
 
