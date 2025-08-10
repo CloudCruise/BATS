@@ -207,28 +207,23 @@ export function Landing({
                 <span>📚</span>
                 Recent websites
               </h3>
-              <div className="grid gap-3">
+              <div className="flex flex-col gap-2">
                 {savedTestCases.map((testCase) => (
                   <button
                     key={testCase.id}
                     onClick={() => onOpenExisting(testCase.pageUrl)}
-                    className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 text-left border border-white/10 hover:border-white/20 group"
+                    className="cursor-pointer flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 text-left border border-white/10 hover:border-white/20 group w-full"
                   >
-                    <div className="flex-1 min-w-0 max-w-full">
-                      <div className="text-sm font-medium text-white truncate group-hover:text-blue-200 transition-colors">
-                        {testCase.name}
+                    <div className="w-full overflow-hidden">
+                      <div className="flex justify-between">
+                        <div>{testCase.name}</div>
+                        <div className="text-xs text-white/50">
+                          {new Date(testCase.createdAt).toLocaleDateString()}
+                        </div>
                       </div>
-                      <div className="text-xs text-white/60 truncate mt-1 max-w-full">
+                      <div className="text-xs text-white/60 mt-1 truncate">
                         {testCase.description}
                       </div>
-                    </div>
-                    <div className="text-xs text-white/50 ml-4 flex items-center gap-2">
-                      <span>
-                        {new Date(testCase.createdAt).toLocaleDateString()}
-                      </span>
-                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        →
-                      </span>
                     </div>
                   </button>
                 ))}
