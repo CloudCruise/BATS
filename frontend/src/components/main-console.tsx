@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/site-header";
-import { ChatSidebar } from "@/components/chat-sidebar";
+import { TabbedSidebar } from "@/components/tabbed-sidebar";
 import { WebPreview, WebPreviewBody, WebPreviewNavigation, WebPreviewUrl } from "@/components/web-preview";
-import { Button } from "@/components/ui/button";
-import { BotIcon } from "lucide-react";
 import { StreamingWebPreview } from "@/components/streaming-web-preview";
 import { UIMessage } from "@ai-sdk/react";
+import { PageAgent, AgentRunner, type AgentAction } from "@/agent/main-agent";
 
 type SavedSite = { id: string; title: string; url: string; createdAt: number };
 
@@ -21,11 +20,18 @@ type MainConsoleProps = {
 };
 
 const STORAGE_KEY = "bats:saved-sites";
+const CONTINUOUS_MODE = false;
 
 export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGenerating = false }: MainConsoleProps) {
   const [rightOpen, setRightOpen] = useState(true);
   const [sites, setSites] = useState<SavedSite[]>([]);
   const [activeUrl, setActiveUrl] = useState(initialUrl || "");
+
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [agentRunning, setAgentRunning] = useState(false);
+  const [agentActions, setAgentActions] = useState<AgentAction[]>([]);
+  const pageRef = useRef<PageAgent | null>(null);
+  const runnerRef = useRef<AgentRunner | null>(null);
 
   // Function to validate if a URL still exists
   const validateUrl = async (url: string): Promise<boolean> => {
@@ -88,6 +94,59 @@ export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGener
     }
   }, [initialUrl]);
 
+  useEffect(() => {
+    if (!agentRunning) return;
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    if (!pageRef.current) pageRef.current = new PageAgent(iframe);
+    else pageRef.current.attach(iframe);
+  }, [agentRunning, activeUrl]);
+
+  const onAgentClick = async () => {
+    if (agentRunning) {
+      runnerRef.current?.abort();
+      setAgentRunning(false);
+      return;
+    }
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    
+    // Reset actions when starting new agent run
+    setAgentActions([]);
+    
+    const page = new PageAgent(iframe);
+    pageRef.current = page;
+    
+    // Create callback to stream actions in real-time
+    const onAction = (action: AgentAction) => {
+      setAgentActions(prev => {
+        const existing = prev.find(a => a.id === action.id);
+        if (existing) {
+          // Update existing action
+          return prev.map(a => a.id === action.id ? action : a);
+        } else {
+          // Add new action
+          return [...prev, action];
+        }
+      });
+    };
+    
+    const runner = new AgentRunner(page, CONTINUOUS_MODE, onAction);
+    runnerRef.current = runner;
+    setAgentRunning(true);
+    
+    try {
+      if (CONTINUOUS_MODE) {
+        await runner.runLoop("Disrupt browser automation with new buttons, moved buttons, and more.");
+      } else {
+        // Use the new runIterations method for 3 iterations
+        await runner.runIterations("Disrupt browser automation with new buttons, moved buttons, and more.", 3);
+      }
+    } finally {
+      setAgentRunning(false);
+    }
+  };
+
   const items = sites.map((s) => ({ name: s.title, url: s.url }));
 
   const removeSite = (targetUrl: string) => {
@@ -132,14 +191,9 @@ export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGener
                       <div className="flex-1 min-w-0">
                         <WebPreviewUrl src={activeUrl} />
                       </div>
-                      <div className="shrink-0 ml-2">
-                        <Button variant="outline" size="sm" type="button" className="whitespace-nowrap">
-                          <BotIcon className="w-4 h-4 mr-2" />
-                          Agent Mode
-                        </Button>
-                      </div>
+
                     </WebPreviewNavigation>
-                    <WebPreviewBody src={activeUrl} />
+                    <WebPreviewBody ref={iframeRef} src={activeUrl} />
                   </WebPreview>
                 )}
               </div>
@@ -149,12 +203,18 @@ export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGener
       </SidebarInset>
       {/* Right Sidebar */}
       <div 
-        className={`border-l bg-background shadow-sm flex flex-col h-screen transition-all duration-300 ease-in-out overflow-hidden ${
+        className={`transition-all duration-300 ease-in-out overflow-hidden ${
           rightOpen ? 'w-[380px] min-w-[380px]' : 'w-0 min-w-0'
         }`}
       >
         <div className={`transition-opacity duration-300 ${rightOpen ? 'opacity-100' : 'opacity-0'}`}>
-          <ChatSidebar open={rightOpen} currentUrl={activeUrl} />
+          <TabbedSidebar 
+            open={rightOpen} 
+            currentUrl={activeUrl}
+            agentRunning={agentRunning}
+            onAgentToggle={onAgentClick}
+            agentActions={agentActions}
+          />
         </div>
       </div>
     </SidebarProvider>

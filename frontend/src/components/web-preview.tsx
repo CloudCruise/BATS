@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, type ComponentProps, type ReactNode } from "react";
+import { createContext, useContext, useState, type ComponentProps, type ReactNode, forwardRef } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -87,11 +87,15 @@ export function WebPreviewUrl({ value, src, onChange, onKeyDown, className, ...p
 }
 
 export type WebPreviewBodyProps = ComponentProps<"iframe"> & { loading?: ReactNode };
-export function WebPreviewBody({ className, loading, src, ...props }: WebPreviewBodyProps) {
+export const WebPreviewBody = forwardRef<HTMLIFrameElement, WebPreviewBodyProps>(function WebPreviewBody(
+  { className, loading, src, ...props },
+  ref
+) {
   const { url } = useWebPreview();
   return (
     <div className="flex-1">
       <iframe
+        ref={ref}
         className={cn("size-full", className)}
         src={src ?? (url || undefined)}
         title="Preview"
@@ -101,7 +105,7 @@ export function WebPreviewBody({ className, loading, src, ...props }: WebPreview
       {loading}
     </div>
   );
-}
+});
 
 // Maintained for potential future external placement if needed
 export type WebPreviewOpenExternalProps = ComponentProps<typeof Button> & { href?: string };

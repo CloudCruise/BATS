@@ -268,3 +268,42 @@
   animation-delay: 12s;
   font-size: 1.2rem;
 }
+
+/* Agent button glow animation */
+@keyframes spinning-border {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.5;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 30px rgba(249, 115, 22, 0.6);
+  }
+}
+
+.agent-button-glow {
+  position: absolute;
+  inset: -2px;
+  border-radius: 8px;
+  background: conic-gradient(from 0deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #a855f7, #ef4444);
+  animation: spinning-border 2s linear infinite, pulse-glow 1.5s ease-in-out infinite;
+  opacity: 0.8;
+  z-index: -1;
+}
+
+.agent-button-glow::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 6px;
+  background: var(--background);
+}
