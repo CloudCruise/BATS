@@ -81,7 +81,7 @@ export function TabbedSidebar({ open, currentUrl, agentRunning, onAgentToggle, a
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-hidden">
         {activeTab === "agent" && (
           <AgentPanel
             currentUrl={currentUrl}
