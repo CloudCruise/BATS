@@ -120,8 +120,6 @@ export function StreamingWebPreview({
     "MESSAGE STREAMING",
     messages,
     htmlContent,
-    fallbackReasoning,
-    reasoningContent,
     isStreaming,
     hasHtml,
     hasReasoning
