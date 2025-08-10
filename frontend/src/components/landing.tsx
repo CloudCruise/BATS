@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowUp } from "lucide-react";
 import { TestCase } from "@/types/testcase";
+import { TestCaseBubble } from "./test-case-bubble";
 
 type SavedSite = { id: string; title: string; url: string; createdAt: number };
 
@@ -209,23 +210,11 @@ export function Landing({
               </h3>
               <div className="flex flex-col gap-2">
                 {savedTestCases.map((testCase) => (
-                  <button
+                  <TestCaseBubble
                     key={testCase.id}
-                    onClick={() => onOpenExisting(testCase.pageUrl)}
-                    className="cursor-pointer flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 text-left border border-white/10 hover:border-white/20 group w-full"
-                  >
-                    <div className="w-full overflow-hidden">
-                      <div className="flex justify-between">
-                        <div>{testCase.name}</div>
-                        <div className="text-xs text-white/50">
-                          {new Date(testCase.createdAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <div className="text-xs text-white/60 mt-1 truncate">
-                        {testCase.description}
-                      </div>
-                    </div>
-                  </button>
+                    testCase={testCase}
+                    onOpenExisting={onOpenExisting}
+                  />
                 ))}
               </div>
               {savedTestCases.length >= 3 && (

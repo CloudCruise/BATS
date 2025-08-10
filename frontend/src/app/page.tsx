@@ -75,7 +75,6 @@ export default function Home() {
         }}
         messages={messages}
         isGenerating={status === "streaming"}
-        initialPrompt={initialPrompt}
       />
     );
   }

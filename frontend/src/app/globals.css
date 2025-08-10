@@ -200,7 +200,8 @@
     opacity: 1;
   }
   100% {
-    transform: translateX(calc(100vw + 100px)) translateY(-100px) rotate(-360deg);
+    transform: translateX(calc(100vw + 100px)) translateY(-100px)
+      rotate(-360deg);
     opacity: 0;
   }
 }
@@ -270,18 +271,22 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.5;
     box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
   }
   50% {
     opacity: 0.8;
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 30px rgba(249, 115, 22, 0.6);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.8),
+      0 0 30px rgba(249, 115, 22, 0.6);
   }
 }
 
 @keyframes ring-rotate {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .agent-button-glow {
@@ -289,10 +294,33 @@
   inset: -4px;
   border-radius: 12px;
   border: 3px solid transparent;
-  background:
-    linear-gradient(var(--background), var(--background)) padding-box,
+  background: linear-gradient(var(--background), var(--background)) padding-box,
     conic-gradient(from 0deg, #ef4444, #f97316, #eab308, #ef4444) border-box;
   animation: ring-rotate 6s linear infinite, pulse-glow 2s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
+}
+
+@layer base {
+  :root {
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+  }
+
+  .dark {
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.439 0 0);
+  }
 }
