@@ -1,23 +1,25 @@
-"use client"
+"use client";
 
-import { useMemo } from "react"
-import { Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Reasoning, ReasoningContent } from "@/components/ai-elements/reasoning"
-import { UIMessage } from "@ai-sdk/react"
+import { useMemo } from "react";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Reasoning,
+  ReasoningContent,
+} from "@/components/ai-elements/reasoning";
+import { UIMessage } from "@ai-sdk/react";
 
 type StreamingWebPreviewProps = {
-  messages: UIMessage[]
-  isStreaming?: boolean
-  title?: string
-}
+  messages: UIMessage[];
+  isStreaming?: boolean;
+  title?: string;
+};
 
 export function StreamingWebPreview({
   messages,
   isStreaming = false,
   title = "Generating website...",
 }: StreamingWebPreviewProps) {
-
   function extractHtmlOnly(raw: string): string {
     if (!raw) return "";
     let t = raw.replace(/```html\s*/gi, "").replace(/```/g, "");
@@ -35,7 +37,9 @@ export function StreamingWebPreview({
     if (!raw) return "";
     const text = raw.replace(/\r/g, "");
     // Prefer explicit PREAMBLE → HTML section
-    const byHeaders = text.match(/(?:^|\n)\s*(?:1\)\s*)?PREAMBLE\s*:?\s*\n([\s\S]*?)(?:\n\s*(?:2\)\s*)?HTML\b)/i);
+    const byHeaders = text.match(
+      /(?:^|\n)\s*(?:1\)\s*)?PREAMBLE\s*:?\s*\n([\s\S]*?)(?:\n\s*(?:2\)\s*)?HTML\b)/i
+    );
     if (byHeaders && byHeaders[1]) {
       return byHeaders[1]
         .split("\n")
@@ -46,7 +50,8 @@ export function StreamingWebPreview({
     // Otherwise, anything before <!doctype html> or <html>
     const idx = text.search(/<!doctype html>|<html[\s>]/i);
     if (idx > 0) {
-      return text.slice(0, idx)
+      return text
+        .slice(0, idx)
         .split("\n")
         .filter((line) => !/^\s*(PREAMBLE|HTML)\s*:?\s*$/i.test(line))
         .join("\n")
@@ -60,12 +65,18 @@ export function StreamingWebPreview({
     const lastMessage = assistantMessages[assistantMessages.length - 1];
     if (!lastMessage?.parts) return "";
     const textParts = lastMessage.parts.filter((part) => part.type === "text");
-    const rawText = textParts.map((part) => ("text" in part ? part.text : "")).join("");
+    const rawText = textParts
+      .map((part) => ("text" in part ? part.text : ""))
+      .join("");
     const fromText = extractPreamble(rawText);
     if (fromText) return fromText;
     // Fallback: use 'reasoning' parts if present
-    const reasoningParts = lastMessage.parts.filter((part) => part.type === "reasoning");
-    const combined = reasoningParts.map((part) => ("text" in part ? part.text : "")).join("");
+    const reasoningParts = lastMessage.parts.filter(
+      (part) => part.type === "reasoning"
+    );
+    const combined = reasoningParts
+      .map((part) => ("text" in part ? part.text : ""))
+      .join("");
     return combined
       .split("\n")
       .filter((line) => !/^\s*(PREAMBLE|REASONING|HTML)\s*:?\s*$/i.test(line))
@@ -89,7 +100,7 @@ export function StreamingWebPreview({
   }, [messages]);
 
   const displayReasoning = useMemo(() => {
-    const raw = (preambleContent || preambleFromText) || "";
+    const raw = preambleContent || preambleFromText || "";
     // Collapse extra blank lines between bullet points and normalize line endings
     return raw.replace(/\r/g, "").replace(/\n\s*\n+/g, "\n");
   }, [preambleContent, preambleFromText]);
@@ -105,6 +116,15 @@ export function StreamingWebPreview({
     return htmlContent.split("\n");
   }, [htmlContent]);
 
+  console.log(
+    "MESSAGE STREAMING",
+    messages,
+    htmlContent,
+    isStreaming,
+    hasHtml,
+    hasReasoning
+  );
+
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Header */}
@@ -112,17 +132,16 @@ export function StreamingWebPreview({
         <Loader2 className={`h-5 w-5 ${!isStreaming ? "" : "animate-spin"}`} />
         <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
         {isStreaming && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="ml-auto rounded-full" 
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto rounded-full"
             disabled
           >
             Generating...
           </Button>
         )}
       </div>
-
       {/* Reasoning Section - Stacked on top */}
       {hasReasoning && (
         <div className="border-b bg-muted/10 p-4">
@@ -144,8 +163,12 @@ export function StreamingWebPreview({
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin mb-4" />
               <div className="text-center space-y-2">
-                <p className="text-lg font-medium">Searching the web for reference pages...</p>
-                <p className="text-sm">Gathering examples and patterns to guide generation</p>
+                <p className="text-lg font-medium">
+                  Searching the web for reference pages...
+                </p>
+                <p className="text-sm">
+                  Gathering examples and patterns to guide generation
+                </p>
               </div>
             </div>
           ) : (
@@ -179,5 +202,5 @@ export function StreamingWebPreview({
         </div>
       </div>
     </div>
-  )
+  );
 }

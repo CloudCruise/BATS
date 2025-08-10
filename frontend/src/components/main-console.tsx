@@ -5,10 +5,18 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { TabbedSidebar } from "@/components/tabbed-sidebar";
-import { WebPreview, WebPreviewBody, WebPreviewNavigation, WebPreviewUrl } from "@/components/web-preview";
+import {
+  WebPreview,
+  WebPreviewBody,
+  WebPreviewNavigation,
+  WebPreviewUrl,
+} from "@/components/web-preview";
 import { StreamingWebPreview } from "@/components/streaming-web-preview";
 import { UIMessage } from "@ai-sdk/react";
+import { Tabs, TabsTrigger, TabsList, TabsContent } from "./ui/tabs";
 import { PageAgent, AgentRunner, type AgentAction } from "@/agent/main-agent";
+import { BotIcon } from "lucide-react";
+import { Button } from "./ui/button";
 
 type SavedSite = { id: string; title: string; url: string; createdAt: number };
 
@@ -37,8 +45,13 @@ export function MainConsole({
   const [agentActions, setAgentActions] = useState<AgentAction[]>([]);
   const pageRef = useRef<PageAgent | null>(null);
   const runnerRef = useRef<AgentRunner | null>(null);
-  const [uiMessages, setUIMessages] = useState<Array<{ id: string; role: 'assistant' | 'user'; parts: Array<{ type: string; text?: string }> }>>([]);
-  
+  const [uiMessages, setUIMessages] = useState<
+    Array<{
+      id: string;
+      role: "assistant" | "user";
+      parts: Array<{ type: string; text?: string }>;
+    }>
+  >([]);
 
   // Function to validate if a URL still exists
   const validateUrl = async (url: string): Promise<boolean> => {
@@ -119,39 +132,46 @@ export function MainConsole({
     }
     const iframe = iframeRef.current;
     if (!iframe) return;
-    
+
     // Reset actions when starting new agent run
     setAgentActions([]);
-    
+
     const page = new PageAgent(iframe);
     pageRef.current = page;
-    
+
     // Create callback to stream actions in real-time
     const onAction = (action: AgentAction) => {
-      setAgentActions(prev => {
-        const existing = prev.find(a => a.id === action.id);
+      setAgentActions((prev) => {
+        const existing = prev.find((a) => a.id === action.id);
         if (existing) {
           // Update existing action
-          return prev.map(a => a.id === action.id ? action : a);
+          return prev.map((a) => (a.id === action.id ? action : a));
         } else {
           // Add new action
           return [...prev, action];
         }
       });
     };
-    
-    const runner = new AgentRunner(page, CONTINUOUS_MODE, onAction, (msgs) => setUIMessages(msgs));
+
+    const runner = new AgentRunner(page, CONTINUOUS_MODE, onAction, (msgs) =>
+      setUIMessages(msgs)
+    );
     runnerRef.current = runner;
     setAgentRunning(true);
-    
+
     try {
       // Guard iframe from navigation while agent is running
       page.enableNavGuards(true);
       if (CONTINUOUS_MODE) {
-        await runner.runLoop("Keep modifying the website with new buttons, moved buttons, and more.");
+        await runner.runLoop(
+          "Keep modifying the website with new buttons, moved buttons, and more."
+        );
       } else {
         // Use the new runIterations method for 3 iterations
-        await runner.runIterations("Keep modifying the website with new buttons, moved buttons, and more.", 3);
+        await runner.runIterations(
+          "Keep modifying the website with new buttons, moved buttons, and more.",
+          3
+        );
       }
     } finally {
       // Remove guards and stop running state
@@ -198,41 +218,64 @@ export function MainConsole({
         <div className="flex flex-1 flex-col">
           <div className="flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 p-4 md:p-6">
-              <div className="relative h-[calc(100vh-8rem)] rounded-lg border">
-                {isGenerating ? (
-                  <StreamingWebPreview
-                    messages={messages}
-                    isStreaming={isGenerating}
-                  />
-                ) : (
-                  <WebPreview
-                    defaultUrl={activeUrl}
-                    onUrlChange={(u) => setActiveUrl(u)}
-                    style={{ height: "100%" }}
-                  >
-                    <WebPreviewNavigation className="justify-between">
-                      <div className="flex-1 min-w-0">
-                        <WebPreviewUrl src={activeUrl} />
-                      </div>
-
-                    </WebPreviewNavigation>
-                    <WebPreviewBody ref={iframeRef} src={activeUrl} />
-                  </WebPreview>
-                )}
-              </div>
+              <Tabs defaultValue="streaming">
+                <div className="flex justify-end">
+                  <TabsList>
+                    <TabsTrigger value="streaming">Streaming</TabsTrigger>
+                    <TabsTrigger value="code">Code</TabsTrigger>
+                  </TabsList>
+                </div>
+                <div className="relative h-[calc(100vh-8rem)] rounded-lg border">
+                  <TabsContent value="streaming">
+                    <StreamingWebPreview
+                      messages={messages}
+                      isStreaming={isGenerating}
+                    />
+                  </TabsContent>
+                  <TabsContent value="code" className="h-full">
+                    <WebPreview
+                      defaultUrl={activeUrl}
+                      onUrlChange={(u) => setActiveUrl(u)}
+                      style={{ height: "100%" }}
+                    >
+                      <WebPreviewNavigation className="justify-between">
+                        <div className="flex-1 min-w-0">
+                          <WebPreviewUrl src={activeUrl} />
+                        </div>
+                        <div className="shrink-0 ml-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            type="button"
+                            className="whitespace-nowrap"
+                          >
+                            <BotIcon className="w-4 h-4 mr-2" />
+                            Agent Mode
+                          </Button>
+                        </div>
+                      </WebPreviewNavigation>
+                      <WebPreviewBody src={activeUrl} ref={iframeRef} />
+                    </WebPreview>
+                  </TabsContent>
+                </div>
+              </Tabs>
             </div>
           </div>
         </div>
       </SidebarInset>
       {/* Right Sidebar */}
-      <div 
-        className={`transition-all duration-300 ease-in-out overflow-hidden h-svh max-h-svh ${
-          rightOpen ? 'w-[380px] min-w-[380px]' : 'w-0 min-w-0'
+      <div
+        className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          rightOpen ? "w-[380px] min-w-[380px]" : "w-0 min-w-0"
         }`}
       >
-        <div className={`h-full transition-opacity duration-300 ${rightOpen ? 'opacity-100' : 'opacity-0'}`}>
-          <TabbedSidebar 
-            open={rightOpen} 
+        <div
+          className={`h-full transition-opacity duration-300 ${
+            rightOpen ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <TabbedSidebar
+            open={rightOpen}
             currentUrl={activeUrl}
             agentRunning={agentRunning}
             onAgentToggle={onAgentClick}
