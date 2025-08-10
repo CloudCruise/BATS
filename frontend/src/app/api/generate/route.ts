@@ -1,14 +1,21 @@
-import { mkdir, writeFile, readdir, stat, unlink } from "fs/promises";
+import { mkdir, writeFile, readdir, stat, unlink, readFile } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { fetchAndCompilePrompt } from "@/lib/langfuse";
+import {
+  extractDescription,
+  extractDescriptionSummary,
+  extractName,
+} from "@/utils/extracts";
+import { TestCase } from "@/types/testcase";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
+  const id = randomUUID();
   try {
     const body = await req.json();
     console.log("body1", JSON.stringify(body, null, 2));
@@ -57,7 +64,8 @@ export async function POST(req: Request) {
         experimental_telemetry: { isEnabled: true },
         onFinish: async (result) => {
           // Extract and save HTML from the final result
-          await saveGeneratedHtml(result.text);
+          await saveGeneratedHtml(result.text, id);
+          await saveGeneratedTestCase(result.text, id);
         },
         providerOptions: {
           openai: {
@@ -84,7 +92,8 @@ export async function POST(req: Request) {
         experimental_telemetry: { isEnabled: true },
         onFinish: async (result) => {
           // Extract and save HTML from the final result
-          await saveGeneratedHtml(result.text);
+          await saveGeneratedHtml(result.text, id);
+          await saveGeneratedTestCase(result.text, id);
         },
         providerOptions: {
           openai: {
@@ -113,7 +122,7 @@ async function createSystemPrompt() {
   return await fetchAndCompilePrompt("generate-website");
 }
 
-async function saveGeneratedHtml(text: string) {
+async function saveGeneratedHtml(text: string, id: string) {
   try {
     // Clean up the HTML content
     let cleanedText = text.trim();
@@ -148,7 +157,6 @@ async function saveGeneratedHtml(text: string) {
     const htmlContent = cleanedText.trim();
 
     if (htmlContent) {
-      const id = randomUUID();
       const dir = path.join(process.cwd(), "public", "generated_websites");
       const filePath = path.join(dir, `${id}.html`);
 
@@ -162,6 +170,29 @@ async function saveGeneratedHtml(text: string) {
     console.error("Failed to save generated HTML:", error);
   }
   return null;
+}
+
+async function saveGeneratedTestCase(text: string, id: string) {
+  // Save the test cases to an file
+  const dir = path.join(process.cwd(), "public", "generated_test_cases");
+  const filePath = path.join(dir, `${id}.json`);
+  await mkdir(dir, { recursive: true });
+  await writeFile(filePath, text, "utf8");
+
+  const testCase: TestCase = {
+    id,
+    name: extractName(text),
+    description: extractDescription(text),
+    summary: extractDescriptionSummary(text),
+    html: text,
+    createdAt: new Date(),
+    pageUrl: `/generated_websites/${id}.html`,
+    startUrl: `/startTest?id=${id}`,
+  };
+
+  // Save the test case to the file
+  await writeFile(filePath, JSON.stringify(testCase, null, 2), "utf8");
+  console.log(`Generated test case saved to: /generated_test_cases/${id}.json`);
 }
 
 // Keep the existing GET and DELETE endpoints

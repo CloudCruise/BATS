@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowUp } from "lucide-react";
+import { TestCase } from "@/types/testcase";
 
 type SavedSite = { id: string; title: string; url: string; createdAt: number };
 
@@ -22,8 +23,6 @@ type LandingProps = {
   onOpenExisting: (url: string) => void;
   isLoading: boolean;
 };
-
-const STORAGE_KEY = "bats:saved-sites";
 
 const examplePrompts = [
   "Create a login flow that triggers an unexpected dismissible popup after submit.",
@@ -54,7 +53,7 @@ export function Landing({
   const [prompt, setPrompt] = useState("");
   const [difficulty, setDifficulty] = useState<string>("medium");
   const [websiteType, setWebsiteType] = useState<string>("generic");
-  const [savedSites, setSavedSites] = useState<SavedSite[]>([]);
+  const [savedTestCases, setSavedTestCases] = useState<TestCase[]>([]);
 
   const [placeholderPrompt, setPlaceholderPrompt] = useState("");
   const [currentExample, setCurrentExample] = useState(
@@ -66,20 +65,20 @@ export function Landing({
   ] = useState(0);
 
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        const sites = JSON.parse(raw) as SavedSite[];
-        setSavedSites(sites.slice(0, 3)); // Show only the 3 most recent
-      } catch {}
+    async function loadTestCases() {
+      const testCases = await fetch("/api/test-cases").then((res) =>
+        res.json()
+      );
+      setSavedTestCases(testCases.slice(0, 3)); // Show only the 3 most recent
     }
+    loadTestCases();
   }, []);
 
   const handleGenerate = async () => {
     await onGenerate(prompt, difficulty, websiteType);
   };
 
-  const hasExistingSites = savedSites.length > 0;
+  const hasExistingTestCases = savedTestCases.length > 0;
 
   useEffect(() => {
     // Typing effect for the example prompt
@@ -201,7 +200,7 @@ export function Landing({
           </div>
         </div>
 
-        {hasExistingSites && (
+        {hasExistingTestCases && (
           <div className="w-full max-w-3xl z-10">
             <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 shadow-xl">
               <h3 className="text-xl font-semibold mb-6 text-white/95 flex items-center gap-2">
@@ -209,23 +208,23 @@ export function Landing({
                 Recent websites
               </h3>
               <div className="grid gap-3">
-                {savedSites.map((site) => (
+                {savedTestCases.map((testCase) => (
                   <button
-                    key={site.id}
-                    onClick={() => onOpenExisting(site.url)}
+                    key={testCase.id}
+                    onClick={() => onOpenExisting(testCase.pageUrl)}
                     className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 text-left border border-white/10 hover:border-white/20 group"
                   >
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 max-w-full">
                       <div className="text-sm font-medium text-white truncate group-hover:text-blue-200 transition-colors">
-                        {site.title}
+                        {testCase.name}
                       </div>
-                      <div className="text-xs text-white/60 truncate mt-1">
-                        {site.url}
+                      <div className="text-xs text-white/60 truncate mt-1 max-w-full">
+                        {testCase.description}
                       </div>
                     </div>
                     <div className="text-xs text-white/50 ml-4 flex items-center gap-2">
                       <span>
-                        {new Date(site.createdAt).toLocaleDateString()}
+                        {new Date(testCase.createdAt).toLocaleDateString()}
                       </span>
                       <span className="opacity-0 group-hover:opacity-100 transition-opacity">
                         →
@@ -234,11 +233,11 @@ export function Landing({
                   </button>
                 ))}
               </div>
-              {savedSites.length >= 3 && (
+              {savedTestCases.length >= 3 && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onOpenExisting(savedSites[0].url)}
+                  onClick={() => onOpenExisting(savedTestCases[0].pageUrl)}
                   className="mt-4 text-white/70 hover:text-white hover:bg-white/10 w-full"
                 >
                   View all websites →

@@ -1,11 +1,11 @@
 const getDifficultyInstructions = (diff: string) => {
   switch (diff) {
     case "easy":
-      return `Create a simple, clean website with minimal elements. Use basic styling and straightforward interactions.`;
+      return `Easy - Create a simple, clean website with minimal elements. Use basic styling and straightforward interactions.`;
     case "hard":
-      return `Create a complex, feature-rich website with a full suite elements for the type of website you are creating. If appropriate, use advanced styling, multiple sections, dynamic content, nested forms, modals, dropdowns, carousels, multi-page forms, and complex user flows.`;
+      return `Hard - Create a complex, feature-rich website with a full suite elements for the type of website you are creating. If appropriate, use advanced styling, multiple sections, dynamic content, nested forms, modals, dropdowns, carousels, multi-page forms, and complex user flows.`;
     default: // medium
-      return `Create a realistic website with all typical elements for the type of website you are creating.`;
+      return `Medium - Create a realistic website with all typical elements for the type of website you are creating.`;
   }
 };
 
