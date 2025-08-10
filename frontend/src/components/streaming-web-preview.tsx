@@ -28,7 +28,21 @@ export function StreamingWebPreview({
   title = "Generating website...",
 }: StreamingWebPreviewProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const [phase, setPhase] = useState<"planning" | "searching">("planning");
+  const loadingSteps = useMemo(
+    () => [
+      "Planning Generation Strategy...",
+      "Retrieving Reference Patterns...",
+      "Composing Layout and Semantic Structure...",
+      "Applying Design System and Styles...",
+      "Synthesizing Browser-Agent Test Scenario...",
+      "Running Accessibility and Quality Checks...",
+      "Optimizing and Sanitizing Markup...",
+      "Rendering Preview and Verifying Output...",
+      "Finalizing HTML Artifact..."
+    ],
+    []
+  );
+  const [stepIndex, setStepIndex] = useState(0);
   // Extract PREAMBLE content (preferred) or fallback to 'reasoning' parts
   const preambleContent = useMemo(() => {
     const assistantMessages = messages.filter((m) => m.role === "assistant");
@@ -107,15 +121,15 @@ export function StreamingWebPreview({
     el.scrollTop = el.scrollHeight;
   }, [isStreaming, lines.length]);
 
-  // Progress loading phases: planning (2s) → searching (hold)
+  // Cycle through loading steps every ~2s until HTML starts streaming
   useEffect(() => {
     if (!isStreaming || hasHtml) return;
-    // Reset to planning on a fresh stream start
-    setPhase("planning");
-    const t = setTimeout(() => setPhase("searching"), 2000);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isStreaming]);
+    setStepIndex(0);
+    const interval = setInterval(() => {
+      setStepIndex((prev) => Math.min(prev + 1, loadingSteps.length - 1));
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [isStreaming, hasHtml, loadingSteps.length]);
 
   return (
     <div className="h-full flex flex-col min-h-0 bg-background">
@@ -155,23 +169,8 @@ export function StreamingWebPreview({
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin mb-4" />
               <div className="text-center space-y-2">
-                {phase === "planning" ? (
-                  <>
-                    <p className="text-lg font-medium">
-                      Analyzing user instructions and creating a plan
-                    </p>
-                    <p className="text-sm">Preparing generation steps...</p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-lg font-medium">
-                      Searching the web for reference pages...
-                    </p>
-                    <p className="text-sm">
-                      Gathering examples and patterns to guide generation
-                    </p>
-                  </>
-                )}
+                <p className="text-lg font-medium">{loadingSteps[stepIndex]}</p>
+                <p className="text-sm">Preparing generation steps...</p>
               </div>
             </div>
           ) : (
