@@ -110,7 +110,7 @@ export async function POST(req: Request) {
 }
 
 async function createSystemPrompt() {
-  return await fetchAndCompilePrompt("generate-website");
+  return await fetchAndCompilePrompt("generate-website-v2");
 }
 
 async function saveGeneratedHtml(text: string) {
