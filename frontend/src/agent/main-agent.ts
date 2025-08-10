@@ -336,6 +336,7 @@ export class AgentRunner {
       const sseBuffer = { text: '' } as { text: string };
       const MAX_REASONING_WORDS = 50;
       let reasoningAggregate = '';
+      let reasoningCompleted = false;
       // minimal UI message buffer for the current iteration
       const uiMessages: Array<{ id: string; role: 'assistant' | 'user'; parts: Array<{ type: string; text?: string }> }> = [];
       const uiMsgId = `ui-${reasoningId}`;
@@ -360,6 +361,14 @@ export class AgentRunner {
       const extractPreamble = (raw: string): string => {
         if (!raw) return '';
         const textNorm = raw.replace(/\r/g, '');
+        
+        // Try XML-style preamble tags first
+        const xmlMatch = textNorm.match(/<preamble>\s*([\s\S]*?)\s*<\/preamble>/i);
+        if (xmlMatch && xmlMatch[1]) {
+          return xmlMatch[1].trim();
+        }
+        
+        // Fallback to old format for backward compatibility
         const byHeaders = textNorm.match(/(?:^|\n)\s*(?:1\)\s*)?PREAMBLE\s*:?\s*\n([\s\S]*?)(?:\n\s*(?:2\)\s*)?HTML\b)/i);
         let out = '';
         if (byHeaders && byHeaders[1]) {
@@ -379,9 +388,15 @@ export class AgentRunner {
       const parseToolCalls = (raw: string): Array<{ name: string; args: unknown; key: string }> => {
         const results: Array<{ name: string; args: unknown; key: string }> = [];
         if (!raw) return results;
+        
+        // Extract tool calls from HTML section if using new format
+        const textNorm = raw.replace(/\r/g, '');
+        const htmlMatch = textNorm.match(/<html>\s*([\s\S]*?)(?:<\/html>|$)/i);
+        const searchText = htmlMatch ? htmlMatch[1] : raw;
+        
         const re = /<tool_call>\s*([\s\S]*?)<\/tool_call>/gi;
         let m: RegExpExecArray | null;
-        while ((m = re.exec(raw)) !== null) {
+        while ((m = re.exec(searchText)) !== null) {
           const block = m[1] ?? '';
           const nameMatch = block.match(/<name>\s*([^<]+?)\s*<\/name>/i);
           const argsMatch = block.match(/<arguments>\s*([\s\S]*?)\s*<\/arguments>/i);
@@ -396,6 +411,19 @@ export class AgentRunner {
           results.push({ name, args, key });
         }
         return results;
+      };
+
+      const isPreambleComplete = (raw: string): boolean => {
+        if (!raw) return false;
+        const textNorm = raw.replace(/\r/g, '');
+        
+        // Check if we have a complete preamble XML tag
+        const hasCompletePreamble = /<preamble>\s*[\s\S]*?\s*<\/preamble>/i.test(textNorm);
+        if (hasCompletePreamble) return true;
+        
+        // Fallback: check for old format patterns
+        const hasHtmlSection = /(?:\n\s*(?:2\)\s*)?HTML\b|<!doctype html>|<html[\s>])/i.test(textNorm);
+        return hasHtmlSection;
       };
 
       const parseSSELines = (chunk: string, buffer: { text: string }) => {
@@ -426,8 +454,17 @@ export class AgentRunner {
               reasoningAggregate += part.delta;
               const preamble = extractPreamble(reasoningAggregate);
               const view = preamble || windowText(reasoningAggregate);
-              this.onAction?.({ id: reasoningId, type: 'reasoning', timestamp: new Date(), content: view, state: 'running' });
-              pushOrReplacePart('reasoning', view);
+              
+              // Check if preamble is complete and mark reasoning as completed
+              if (!reasoningCompleted && isPreambleComplete(reasoningAggregate)) {
+                reasoningCompleted = true;
+                this.onAction?.({ id: reasoningId, type: 'reasoning', timestamp: new Date(), content: view, state: 'completed' });
+                pushOrReplacePart('reasoning', view);
+              } else if (!reasoningCompleted) {
+                this.onAction?.({ id: reasoningId, type: 'reasoning', timestamp: new Date(), content: view, state: 'running' });
+                pushOrReplacePart('reasoning', view);
+              }
+              
               // Try to parse tool calls as they appear
               const calls = parseToolCalls(reasoningAggregate);
               for (const call of calls) {
@@ -453,8 +490,14 @@ export class AgentRunner {
               }
               const preamble = extractPreamble(reasoningAggregate);
               const view = preamble || windowText(reasoningAggregate);
-              this.onAction?.({ id: reasoningId, type: 'reasoning', timestamp: new Date(), content: view, state: 'completed' });
-              pushOrReplacePart('text', view);
+              
+              // Only complete reasoning if not already completed
+              if (!reasoningCompleted) {
+                reasoningCompleted = true;
+                this.onAction?.({ id: reasoningId, type: 'reasoning', timestamp: new Date(), content: view, state: 'completed' });
+                pushOrReplacePart('text', view);
+              }
+              
               // Parse any final tool calls and execute
               const calls = parseToolCalls(reasoningAggregate);
               for (const call of calls) {

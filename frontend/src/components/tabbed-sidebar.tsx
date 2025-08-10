@@ -62,7 +62,7 @@ export function TabbedSidebar({ open, currentUrl, agentRunning, onAgentToggle, a
 
   return (
     <div
-      className="border-l bg-background shadow-sm flex flex-col h-full"
+      className="border-l bg-background shadow-sm flex flex-col h-full min-h-0"
       style={{ width: `${widthPx}px`, minWidth: `${widthPx}px` }}
     >
       {/* Drag handle */}
@@ -81,7 +81,7 @@ export function TabbedSidebar({ open, currentUrl, agentRunning, onAgentToggle, a
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-hidden">
         {activeTab === "agent" && (
           <AgentPanel
             currentUrl={currentUrl}

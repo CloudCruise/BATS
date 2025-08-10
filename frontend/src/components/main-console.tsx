@@ -164,12 +164,12 @@ export function MainConsole({
       page.enableNavGuards(true);
       if (CONTINUOUS_MODE) {
         await runner.runLoop(
-          "Disrupt browser automation with new buttons, moved buttons, and more."
+          "Keep modifying the website with new buttons, moved buttons, and more."
         );
       } else {
         // Use the new runIterations method for 3 iterations
         await runner.runIterations(
-          "Disrupt browser automation with new buttons, moved buttons, and more.",
+          "Keep modifying the website with new buttons, moved buttons, and more.",
           3
         );
       }
@@ -267,6 +267,9 @@ export function MainConsole({
       <div
         className={`transition-all duration-300 ease-in-out overflow-hidden ${
           rightOpen ? "w-[380px] min-w-[380px]" : "w-0 min-w-0"
+      <div 
+        className={`transition-all duration-300 ease-in-out overflow-hidden h-svh max-h-svh ${
+          rightOpen ? 'w-[380px] min-w-[380px]' : 'w-0 min-w-0'
         }`}
       >
         <div
@@ -276,6 +279,9 @@ export function MainConsole({
         >
           <TabbedSidebar
             open={rightOpen}
+        <div className={`h-full transition-opacity duration-300 ${rightOpen ? 'opacity-100' : 'opacity-0'}`}>
+          <TabbedSidebar 
+            open={rightOpen} 
             currentUrl={activeUrl}
             agentRunning={agentRunning}
             onAgentToggle={onAgentClick}
