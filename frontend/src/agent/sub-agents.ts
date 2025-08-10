@@ -17,6 +17,21 @@ function findClickable(doc: Document, selector?: string): HTMLElement | null {
   return null;
 }
 
+function addAgentHighlight(element: HTMLElement, options: { timeout?: number } = {}): void {
+  // Add red highlighting to show agent interaction
+  element.style.outline = "3px solid red";
+  element.style.outlineOffset = "2px";
+  
+  // Optionally remove highlighting after timeout (default 10 seconds)
+  if (options.timeout !== 0) {
+    const timeoutMs = options.timeout ?? 10000;
+    setTimeout(() => {
+      element.style.outline = "";
+      element.style.outlineOffset = "";
+    }, timeoutMs);
+  }
+}
+
 export const openPopupSchema = z.object({ selector: z.string().optional() });
 export const moveButtonSchema = z.object({ selector: z.string(), x: z.number(), y: z.number() });
 export const insertButtonSchema = z.object({
@@ -33,8 +48,12 @@ export const openPopup: Tool<z.infer<typeof openPopupSchema>> = {
   async run({ doc }, args: z.infer<typeof openPopupSchema>) {
     const el = findClickable(doc, args?.selector);
     if (!el) throw new Error("No clickable element found");
+    
+    // Add red highlighting to show which element was clicked
+    addAgentHighlight(el);
+    
     el.click();
-    return { clicked: true };
+    return { clicked: true, selector: el.id ? `#${el.id}` : el.tagName.toLowerCase() };
   },
 };
 
@@ -50,7 +69,12 @@ export const moveButton: Tool<z.infer<typeof moveButtonSchema>> = {
     s.left = `${Math.round(args.x)}px`;
     s.top = `${Math.round(args.y)}px`;
     s.zIndex = "1000";
-    return { moved: true, left: s.left, top: s.top };
+    
+    // Add permanent red highlighting to show which element was moved by agent
+    el.setAttribute("data-agent-moved", "true");
+    addAgentHighlight(el, { timeout: 0 });
+    
+    return { moved: true, left: s.left, top: s.top, selector: args.selector };
   },
 };
 
@@ -65,6 +89,21 @@ export const insertButton: Tool<z.infer<typeof insertButtonSchema>> = {
     if (args.id) btn.id = args.id;
     if (args.className) btn.className = args.className;
     btn.setAttribute("data-testid", args.id ?? "inserted-button");
+    btn.setAttribute("data-agent-inserted", "true");
+    
+    // Add permanent red highlighting to identify agent-inserted elements
+    addAgentHighlight(btn, { timeout: 0 });
+    
+    // Prevent the outline from being removed even if the button is clicked or styled
+    const maintainHighlight = () => {
+      btn.style.outline = "3px solid red";
+      btn.style.outlineOffset = "2px";
+    };
+    
+    btn.addEventListener('click', maintainHighlight);
+    btn.addEventListener('focus', maintainHighlight);
+    btn.addEventListener('blur', maintainHighlight);
+    
     parent.appendChild(btn);
     return { inserted: true, selector: btn.id ? `#${btn.id}` : '[data-testid="inserted-button"]' };
   },

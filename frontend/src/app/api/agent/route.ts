@@ -32,6 +32,12 @@ export async function POST(req: Request) {
       messages: modelMessages,
       experimental_telemetry: { isEnabled: true },
       system: systemPrompt,
+      providerOptions: {
+        openai: {
+          textVerbosity: 'low',
+          reasoningEffort: 'low'
+        }
+      }
     });
 
     return result.toUIMessageStreamResponse({ sendReasoning: true });
