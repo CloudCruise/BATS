@@ -8,7 +8,7 @@ export function SidebarInset({ children }: { children: React.ReactNode }) {
     <div
       className={cn(
         "transition-all duration-200 h-screen",
-        open ? "ml-64" : "ml-16"
+        open ? "pl-64" : "pl-12"
       )}
     >
       {children}
