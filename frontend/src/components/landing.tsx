@@ -130,7 +130,7 @@ export function Landing({
             <div className="bat-animation bat-5">🦇</div>
           </div>
 
-          <div className="space-y-6 z-10">
+          <div className="space-y-6 z-10 flex flex-col items-center">
             <div className="flex items-center justify-center gap-3 mb-4">
               <span className="text-6xl">🦇</span>
               <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
@@ -138,7 +138,7 @@ export function Landing({
               </h1>
               <span className="text-6xl">🦇</span>
             </div>
-            <p className="text-white/90 max-w-2xl text-lg leading-relaxed">
+            <p className="text-white/90 max-w-2xl text-lg leading-relaxed text-center">
               Describe a website scenario to test your browser agents, and
               we&apos;ll generate it locally for you to iterate on.
             </p>
