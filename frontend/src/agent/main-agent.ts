@@ -167,6 +167,7 @@ export class AgentRunner {
   private onAction?: ActionCallback;
   private onUIMessages?: (messages: Array<{ id: string; role: 'assistant' | 'user'; parts: Array<{ type: string; text?: string }> }>) => void;
   private traceId: string | null = null;
+  private executedToolCallKeys: Set<string> = new Set();
 
   constructor(page: PageAgent, continuous = false, onAction?: ActionCallback, onUIMessages?: (messages: Array<{ id: string; role: 'assistant' | 'user'; parts: Array<{ type: string; text?: string }> }>) => void) {
     this.page = page;
@@ -356,6 +357,47 @@ export class AgentRunner {
         return words.slice(words.length - MAX_REASONING_WORDS).join(' ');
       };
 
+      const extractPreamble = (raw: string): string => {
+        if (!raw) return '';
+        const textNorm = raw.replace(/\r/g, '');
+        const byHeaders = textNorm.match(/(?:^|\n)\s*(?:1\)\s*)?PREAMBLE\s*:?\s*\n([\s\S]*?)(?:\n\s*(?:2\)\s*)?HTML\b)/i);
+        let out = '';
+        if (byHeaders && byHeaders[1]) {
+          out = byHeaders[1];
+        } else {
+          const idx = textNorm.search(/<!doctype html>|<html[\s>]/i);
+          if (idx > 0) out = textNorm.slice(0, idx);
+        }
+        return out
+          .split('\n')
+          .filter((line) => !/^\s*(PREAMBLE|HTML)\s*:?\s*$/i.test(line))
+          .join('\n')
+          .replace(/\n\s*\n+/g, '\n')
+          .trim();
+      };
+
+      const parseToolCalls = (raw: string): Array<{ name: string; args: unknown; key: string }> => {
+        const results: Array<{ name: string; args: unknown; key: string }> = [];
+        if (!raw) return results;
+        const re = /<tool_call>\s*([\s\S]*?)<\/tool_call>/gi;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(raw)) !== null) {
+          const block = m[1] ?? '';
+          const nameMatch = block.match(/<name>\s*([^<]+?)\s*<\/name>/i);
+          const argsMatch = block.match(/<arguments>\s*([\s\S]*?)\s*<\/arguments>/i);
+          const name = nameMatch ? nameMatch[1].trim() : '';
+          let args: unknown = {};
+          try {
+            args = argsMatch ? JSON.parse(argsMatch[1]) : {};
+          } catch {
+            args = {};
+          }
+          const key = `${name}:${JSON.stringify(args)}`;
+          results.push({ name, args, key });
+        }
+        return results;
+      };
+
       const parseSSELines = (chunk: string, buffer: { text: string }) => {
         buffer.text += chunk;
         const events: string[] = [];
@@ -382,18 +424,54 @@ export class AgentRunner {
             if (part.type === 'text-delta' && typeof part.delta === 'string') {
               // Aggregate deltas and show a capped sliding window to avoid one-word flicker
               reasoningAggregate += part.delta;
-              const view = windowText(reasoningAggregate);
+              const preamble = extractPreamble(reasoningAggregate);
+              const view = preamble || windowText(reasoningAggregate);
               this.onAction?.({ id: reasoningId, type: 'reasoning', timestamp: new Date(), content: view, state: 'running' });
               pushOrReplacePart('reasoning', view);
+              // Try to parse tool calls as they appear
+              const calls = parseToolCalls(reasoningAggregate);
+              for (const call of calls) {
+                if (this.executedToolCallKeys.has(call.key) || !call.name) continue;
+                const toolId = `tool-${i}-${Date.now()}-${this.executedToolCallKeys.size}`;
+                this.onAction?.({ id: toolId, type: 'tool', timestamp: new Date(), toolName: call.name, toolInput: call.args as Record<string, unknown>, state: 'running' });
+                try {
+                  const output = await this.page.runTool(call.name, call.args);
+                  this.onAction?.({ id: toolId, type: 'tool', timestamp: new Date(), toolName: call.name, toolInput: call.args as Record<string, unknown>, toolOutput: output as Record<string, unknown>, state: 'completed' });
+                  this.messages.push({ role: 'assistant', content: [{ type: 'tool-call', toolCallId: toolId, toolName: call.name, input: call.args }] });
+                  this.messages.push({ role: 'tool', content: [{ type: 'tool-result', toolCallId: toolId, toolName: call.name, output }] });
+                  this.executedToolCallKeys.add(call.key);
+                } catch (err) {
+                  this.onAction?.({ id: toolId, type: 'tool', timestamp: new Date(), toolName: call.name, toolInput: call.args as Record<string, unknown>, toolError: err instanceof Error ? err.message : 'Unknown error', state: 'error' });
+                  this.executedToolCallKeys.add(call.key);
+                }
+              }
             }
             if (part.type === 'text') {
               // Finalize with the full aggregated text (still capped to a window for display)
               if (typeof part.text === 'string' && part.text.length > 0) {
                 reasoningAggregate = part.text;
               }
-              const view = windowText(reasoningAggregate);
+              const preamble = extractPreamble(reasoningAggregate);
+              const view = preamble || windowText(reasoningAggregate);
               this.onAction?.({ id: reasoningId, type: 'reasoning', timestamp: new Date(), content: view, state: 'completed' });
               pushOrReplacePart('text', view);
+              // Parse any final tool calls and execute
+              const calls = parseToolCalls(reasoningAggregate);
+              for (const call of calls) {
+                if (this.executedToolCallKeys.has(call.key) || !call.name) continue;
+                const toolId = `tool-${i}-${Date.now()}-${this.executedToolCallKeys.size}`;
+                this.onAction?.({ id: toolId, type: 'tool', timestamp: new Date(), toolName: call.name, toolInput: call.args as Record<string, unknown>, state: 'running' });
+                try {
+                  const output = await this.page.runTool(call.name, call.args);
+                  this.onAction?.({ id: toolId, type: 'tool', timestamp: new Date(), toolName: call.name, toolInput: call.args as Record<string, unknown>, toolOutput: output as Record<string, unknown>, state: 'completed' });
+                  this.messages.push({ role: 'assistant', content: [{ type: 'tool-call', toolCallId: toolId, toolName: call.name, input: call.args }] });
+                  this.messages.push({ role: 'tool', content: [{ type: 'tool-result', toolCallId: toolId, toolName: call.name, output }] });
+                  this.executedToolCallKeys.add(call.key);
+                } catch (err) {
+                  this.onAction?.({ id: toolId, type: 'tool', timestamp: new Date(), toolName: call.name, toolInput: call.args as Record<string, unknown>, toolError: err instanceof Error ? err.message : 'Unknown error', state: 'error' });
+                  this.executedToolCallKeys.add(call.key);
+                }
+              }
             }
             // Handle tool calls when input is ready
             if (part.type === 'tool-input-available') {
