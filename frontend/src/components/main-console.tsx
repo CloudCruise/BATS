@@ -32,6 +32,7 @@ export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGener
   const [agentActions, setAgentActions] = useState<AgentAction[]>([]);
   const pageRef = useRef<PageAgent | null>(null);
   const runnerRef = useRef<AgentRunner | null>(null);
+  const [uiMessages, setUIMessages] = useState<Array<{ id: string; role: 'assistant' | 'user'; parts: Array<{ type: string; text?: string }> }>>([]);
 
   // Function to validate if a URL still exists
   const validateUrl = async (url: string): Promise<boolean> => {
@@ -131,7 +132,7 @@ export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGener
       });
     };
     
-    const runner = new AgentRunner(page, CONTINUOUS_MODE, onAction);
+    const runner = new AgentRunner(page, CONTINUOUS_MODE, onAction, (msgs) => setUIMessages(msgs));
     runnerRef.current = runner;
     setAgentRunning(true);
     
@@ -218,6 +219,7 @@ export function MainConsole({ initialUrl, onBackToPrompt, messages = [], isGener
             agentRunning={agentRunning}
             onAgentToggle={onAgentClick}
             agentActions={agentActions}
+            uiMessages={uiMessages}
           />
         </div>
       </div>

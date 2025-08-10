@@ -165,12 +165,14 @@ export class AgentRunner {
   private messages: Array<{ role: string; content: string | Array<{ type: string; toolCallId?: string; toolName?: string; input?: unknown; output?: unknown }> }> = [];
   private continuous = false;
   private onAction?: ActionCallback;
+  private onUIMessages?: (messages: Array<{ id: string; role: 'assistant' | 'user'; parts: Array<{ type: string; text?: string }> }>) => void;
   private traceId: string | null = null;
 
-  constructor(page: PageAgent, continuous = false, onAction?: ActionCallback) {
+  constructor(page: PageAgent, continuous = false, onAction?: ActionCallback, onUIMessages?: (messages: Array<{ id: string; role: 'assistant' | 'user'; parts: Array<{ type: string; text?: string }> }>) => void) {
     this.page = page;
     this.continuous = continuous;
     this.onAction = onAction;
+    this.onUIMessages = onUIMessages;
   }
 
   async runOnce(objective: string) {
@@ -331,6 +333,28 @@ export class AgentRunner {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       const sseBuffer = { text: '' } as { text: string };
+      const MAX_REASONING_WORDS = 50;
+      let reasoningAggregate = '';
+      // minimal UI message buffer for the current iteration
+      const uiMessages: Array<{ id: string; role: 'assistant' | 'user'; parts: Array<{ type: string; text?: string }> }> = [];
+      const uiMsgId = `ui-${reasoningId}`;
+      uiMessages.push({ id: uiMsgId, role: 'assistant', parts: [] });
+      const pushOrReplacePart = (type: string, text: string) => {
+        const m = uiMessages[0];
+        const last = m.parts[m.parts.length - 1];
+        if (last && last.type === type) {
+          last.text = text;
+        } else {
+          m.parts.push({ type, text });
+        }
+        this.onUIMessages?.(uiMessages);
+      };
+
+      const windowText = (text: string) => {
+        const words = text.split(/\s+/).filter(Boolean);
+        if (words.length <= MAX_REASONING_WORDS) return words.join(' ');
+        return words.slice(words.length - MAX_REASONING_WORDS).join(' ');
+      };
 
       const parseSSELines = (chunk: string, buffer: { text: string }) => {
         buffer.text += chunk;
@@ -356,11 +380,20 @@ export class AgentRunner {
             const part = JSON.parse(frame) as { type: string; [k: string]: unknown };
             // Handle reasoning text deltas
             if (part.type === 'text-delta' && typeof part.delta === 'string') {
-              // Update running reasoning content
-              this.onAction?.({ id: reasoningId, type: 'reasoning', timestamp: new Date(), content: part.delta, state: 'running' });
+              // Aggregate deltas and show a capped sliding window to avoid one-word flicker
+              reasoningAggregate += part.delta;
+              const view = windowText(reasoningAggregate);
+              this.onAction?.({ id: reasoningId, type: 'reasoning', timestamp: new Date(), content: view, state: 'running' });
+              pushOrReplacePart('reasoning', view);
             }
             if (part.type === 'text') {
-              this.onAction?.({ id: reasoningId, type: 'reasoning', timestamp: new Date(), content: String(part.text ?? ''), state: 'completed' });
+              // Finalize with the full aggregated text (still capped to a window for display)
+              if (typeof part.text === 'string' && part.text.length > 0) {
+                reasoningAggregate = part.text;
+              }
+              const view = windowText(reasoningAggregate);
+              this.onAction?.({ id: reasoningId, type: 'reasoning', timestamp: new Date(), content: view, state: 'completed' });
+              pushOrReplacePart('text', view);
             }
             // Handle tool calls when input is ready
             if (part.type === 'tool-input-available') {

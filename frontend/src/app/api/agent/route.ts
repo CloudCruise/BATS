@@ -1,18 +1,15 @@
+import { streamText, tool, type ModelMessage, type UIMessage, convertToModelMessages, stepCountIs } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { streamText, tool, type ModelMessage, createUIMessageStream, createUIMessageStreamResponse, stepCountIs } from "ai";
 import { z } from "zod";
 import { toolSchemas } from "@/agent/sub-agents";
 import { fetchAndCompilePrompt } from "@/lib/langfuse";
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    const { messages, activeTools = [] } = (await req.json()) as {
-      messages: ModelMessage[];
-      activeTools?: string[];
-    };
-    const list = activeTools.length ? activeTools : Object.keys(toolSchemas);
+    const { messages: incomingMessages, activeTools }: { messages: UIMessage[] | ModelMessage[]; activeTools?: string[] } = await req.json();
+    const list = activeTools && activeTools.length ? activeTools : Object.keys(toolSchemas);
     // Expose ONLY schemas (no execute) so the client executes tools
     const tools = Object.fromEntries(
       list
@@ -22,23 +19,24 @@ export async function POST(req: Request) {
         })
         .filter(Boolean) as [string, ReturnType<typeof tool>][]
     );
-    const systemPrompt = await fetchAndCompilePrompt("adverserial-agent");
-    
-    const stream = createUIMessageStream({
-      async execute({ writer }) {
-        const result = streamText({
-          model: openai("gpt-5-mini"),
-          tools,
-          stopWhen: stepCountIs(5),
-          toolChoice: 'auto',
-          messages,
-          system: systemPrompt,
-        });
-        writer.merge(result.toUIMessageStream());
-      },
+    const systemPrompt = await fetchAndCompilePrompt("adversarial-agent")
+
+    const modelMessages: ModelMessage[] = Array.isArray(incomingMessages) && (incomingMessages as (UIMessage | ModelMessage)[])[0] && 'parts' in (incomingMessages as (UIMessage | ModelMessage)[])[0]!
+      ? convertToModelMessages(incomingMessages as UIMessage[])
+      : (incomingMessages as ModelMessage[]);
+
+    const result = await streamText({
+      model: openai('gpt-5-mini'),
+      tools,
+      stopWhen: stepCountIs(5),
+      toolChoice: 'auto',
+      messages: modelMessages,
+      system: systemPrompt,
     });
-    return createUIMessageStreamResponse({ stream });
-  } catch {
-    return new Response("", { status: 500 });
+
+    return result.toUIMessageStreamResponse({ sendReasoning: true });
+  } catch (err) {
+    console.error('Agent API error:', err);
+    return new Response("Internal Server Error", { status: 500 });
   }
 }

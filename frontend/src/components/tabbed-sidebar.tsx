@@ -2,12 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Bot } from "lucide-react";
-import { ChatPanel } from "@/components/chat-panel";
+import { Bot } from "lucide-react";
 import { AgentPanel } from "./agent-panel";
 import { type AgentAction } from "@/agent/main-agent";
 
-type Tab = "chat" | "agent";
+type Tab = "agent";
 
 type TabbedSidebarProps = {
   open: boolean;
@@ -15,13 +14,14 @@ type TabbedSidebarProps = {
   agentRunning: boolean;
   onAgentToggle: () => void;
   agentActions?: AgentAction[];
+  uiMessages?: Array<{ id: string; role: 'assistant' | 'user'; parts: Array<{ type: string; text?: string }> }>;
 };
 
 const STORAGE_KEY = "bats:right-sidebar-width";
 
-export function TabbedSidebar({ open, currentUrl, agentRunning, onAgentToggle, agentActions = [] }: TabbedSidebarProps) {
+export function TabbedSidebar({ open, currentUrl, agentRunning, onAgentToggle, agentActions = [], uiMessages = [] }: TabbedSidebarProps) {
   const [widthPx, setWidthPx] = useState<number>(380);
-  const [activeTab, setActiveTab] = useState<Tab>("chat");
+  const [activeTab] = useState<Tab>("agent");
   const dragStartX = useRef<number | null>(null);
   const dragStartWidth = useRef<number>(0);
 
@@ -72,23 +72,9 @@ export function TabbedSidebar({ open, currentUrl, agentRunning, onAgentToggle, a
         aria-hidden
       />
       
-      {/* Tab navigation */}
+      {/* Header */}
       <div className="flex border-b bg-muted/30">
-        <Button
-          variant={activeTab === "chat" ? "secondary" : "ghost"}
-          size="sm"
-          className="flex-1 rounded-none border-r justify-start gap-2"
-          onClick={() => setActiveTab("chat")}
-        >
-          <MessageSquare className="w-4 h-4" />
-          Chat
-        </Button>
-        <Button
-          variant={activeTab === "agent" ? "secondary" : "ghost"}
-          size="sm"
-          className="flex-1 rounded-none justify-start gap-2"
-          onClick={() => setActiveTab("agent")}
-        >
+        <Button variant="secondary" size="sm" className="flex-1 rounded-none justify-start gap-2" disabled>
           <Bot className="w-4 h-4" />
           Agent Mode
         </Button>
@@ -96,13 +82,13 @@ export function TabbedSidebar({ open, currentUrl, agentRunning, onAgentToggle, a
 
       {/* Tab content */}
       <div className="flex-1 min-h-0">
-        {activeTab === "chat" && <ChatPanel currentUrl={currentUrl} />}
         {activeTab === "agent" && (
           <AgentPanel
             currentUrl={currentUrl}
             agentRunning={agentRunning}
             onAgentToggle={onAgentToggle}
             actions={agentActions}
+            uiMessages={uiMessages}
           />
         )}
       </div>

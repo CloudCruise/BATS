@@ -14,22 +14,14 @@ type AgentPanelProps = {
   agentRunning: boolean;
   onAgentToggle: () => void;
   actions?: AgentAction[];
+  uiMessages?: Array<{ id: string; role: 'assistant' | 'user'; parts: Array<{ type: string; text?: string }> }>;
 };
 
-export function AgentPanel({ currentUrl, agentRunning, onAgentToggle, actions = [] }: AgentPanelProps) {
+export function AgentPanel({ currentUrl, agentRunning, onAgentToggle, actions = [], uiMessages = [] }: AgentPanelProps) {
   const [toolsOpen, setToolsOpen] = useState(false);
 
   return (
     <div className="h-full flex flex-col bg-background">
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
-            <Bot className="w-3 h-3 text-primary" />
-          </div>
-          <h2 className="text-lg font-semibold text-foreground">Agent Mode</h2>
-        </div>
-      </div>
-
       <div className="flex-1 flex flex-col min-h-0">
         {actions.length > 0 ? (
           <div className="flex-1 min-h-0">
@@ -38,6 +30,16 @@ export function AgentPanel({ currentUrl, agentRunning, onAgentToggle, actions = 
             </div>
             <div className="flex-1 overflow-y-auto">
               <div className="p-4 space-y-3">
+                {uiMessages.map((message) => (
+                  <div key={message.id}>
+                    <Reasoning defaultOpen={false} isStreaming={agentRunning}>
+                      <ReasoningTrigger />
+                      <ReasoningContent>
+                        {message.parts.map((p) => p.text).filter(Boolean).join('\n') || 'Thinking...'}
+                      </ReasoningContent>
+                    </Reasoning>
+                  </div>
+                ))}
                 {actions.map((action) => (
                   <div key={action.id}>
                     {action.type === 'reasoning' && (
@@ -130,21 +132,10 @@ export function AgentPanel({ currentUrl, agentRunning, onAgentToggle, actions = 
 
       <div className="p-4 border-t border-border">
         <div className="relative">
-          {agentRunning && (
-            <div 
-              className="agent-button-glow absolute inset-0 rounded-md animate-pulse"
-              style={{
-                background: 'linear-gradient(45deg, #ef4444, #f97316, #eab308, #f97316)',
-                boxShadow: '0 0 20px rgba(239, 68, 68, 0.5), 0 0 40px rgba(239, 68, 68, 0.3)',
-                zIndex: -1,
-                transform: 'scale(1.05)'
-              }}
-            />
-          )}
           <Button
             onClick={onAgentToggle}
             disabled={!currentUrl}
-            className={`w-full relative ${agentRunning ? 'bg-red-600 hover:bg-red-700 ring-2 ring-red-400 ring-opacity-50' : ''}`}
+            className={`w-full relative ${agentRunning ? 'bg-red-600 hover:bg-red-700' : ''}`}
             variant={agentRunning ? "destructive" : "default"}
           >
             {agentRunning ? (
