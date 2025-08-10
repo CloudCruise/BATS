@@ -15,6 +15,7 @@ import { StreamingWebPreview } from "@/components/streaming-web-preview";
 import { UIMessage } from "@ai-sdk/react";
 import { Tabs, TabsTrigger, TabsList, TabsContent } from "./ui/tabs";
 import { PageAgent, AgentRunner, type AgentAction } from "@/agent/main-agent";
+import { SidebarInset as SidebarInset2 } from "./sidebar-inset";
 import { BotIcon } from "lucide-react";
 import { Button } from "./ui/button";
 
@@ -194,85 +195,87 @@ export function MainConsole({
   // };
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--header-height": "56px",
-          "--sidebar-width": "260px",
-        } as React.CSSProperties
-      }
-    >
-      {/* <AppSidebar
+    <SidebarInset2>
+      <SidebarProvider
+        style={
+          {
+            "--header-height": "56px",
+            "--sidebar-width": "260px",
+          } as React.CSSProperties
+        }
+      >
+        {/* <AppSidebar
         variant="inset"
         items={items}
         activeUrl={activeUrl}
         onSelect={(u) => setActiveUrl(u)}
         onDelete={(u) => removeSite(u)}
       /> */}
-      <SidebarInset>
-        <SiteHeader
-          onGenerateNew={onBackToPrompt}
-          onToggleChat={() => setRightOpen((s) => !s)}
-          isChatOpen={rightOpen}
-        />
-        <div className="flex flex-1 flex-col">
-          <div className="flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 p-4 md:p-6">
-              <Tabs defaultValue="streaming">
-                <div className="flex justify-end">
-                  <TabsList>
-                    <TabsTrigger value="streaming">Streaming</TabsTrigger>
-                    <TabsTrigger value="code">Code</TabsTrigger>
-                  </TabsList>
-                </div>
-                <div className="relative h-[calc(100vh-8rem)] rounded-lg border">
-                  <TabsContent value="streaming">
-                    <StreamingWebPreview
-                      messages={messages}
-                      isStreaming={isGenerating}
-                    />
-                  </TabsContent>
-                  <TabsContent value="code" className="h-full">
-                    <WebPreview
-                      defaultUrl={activeUrl}
-                      onUrlChange={(u) => setActiveUrl(u)}
-                      style={{ height: "100%" }}
-                    >
-                      <WebPreviewNavigation className="justify-between">
-                        <div className="flex-1 min-w-0">
-                          <WebPreviewUrl src={activeUrl} />
-                        </div>
-                      </WebPreviewNavigation>
-                      <WebPreviewBody src={activeUrl} ref={iframeRef} />
-                    </WebPreview>
-                  </TabsContent>
-                </div>
-              </Tabs>
+        <SidebarInset>
+          <SiteHeader
+            onGenerateNew={onBackToPrompt}
+            onToggleChat={() => setRightOpen((s) => !s)}
+            isChatOpen={rightOpen}
+          />
+          <div className="flex flex-1 flex-col">
+            <div className="flex flex-1 flex-col gap-2">
+              <div className="flex flex-col gap-4 p-4 md:p-6">
+                <Tabs defaultValue="streaming">
+                  <div className="flex justify-end">
+                    <TabsList>
+                      <TabsTrigger value="streaming">Streaming</TabsTrigger>
+                      <TabsTrigger value="code">Code</TabsTrigger>
+                    </TabsList>
+                  </div>
+                  <div className="relative h-[calc(100vh-8rem)] rounded-lg border">
+                    <TabsContent value="streaming">
+                      <StreamingWebPreview
+                        messages={messages}
+                        isStreaming={isGenerating}
+                      />
+                    </TabsContent>
+                    <TabsContent value="code" className="h-full">
+                      <WebPreview
+                        defaultUrl={activeUrl}
+                        onUrlChange={(u) => setActiveUrl(u)}
+                        style={{ height: "100%" }}
+                      >
+                        <WebPreviewNavigation className="justify-between">
+                          <div className="flex-1 min-w-0">
+                            <WebPreviewUrl src={activeUrl} />
+                          </div>
+                        </WebPreviewNavigation>
+                        <WebPreviewBody src={activeUrl} ref={iframeRef} />
+                      </WebPreview>
+                    </TabsContent>
+                  </div>
+                </Tabs>
+              </div>
             </div>
           </div>
-        </div>
-      </SidebarInset>
-      {/* Right Sidebar */}
-      <div
-        className={`transition-all duration-300 ease-in-out overflow-hidden ${
-          rightOpen ? "w-[380px] min-w-[380px]" : "w-0 min-w-0"
-        }`}
-      >
+        </SidebarInset>
+        {/* Right Sidebar */}
         <div
-          className={`h-full transition-opacity duration-300 ${
-            rightOpen ? "opacity-100" : "opacity-0"
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${
+            rightOpen ? "w-[380px] min-w-[380px]" : "w-0 min-w-0"
           }`}
         >
-          <TabbedSidebar
-            open={rightOpen}
-            currentUrl={activeUrl}
-            agentRunning={agentRunning}
-            onAgentToggle={onAgentClick}
-            agentActions={agentActions}
-            uiMessages={uiMessages}
-          />
+          <div
+            className={`h-full transition-opacity duration-300 ${
+              rightOpen ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <TabbedSidebar
+              open={rightOpen}
+              currentUrl={activeUrl}
+              agentRunning={agentRunning}
+              onAgentToggle={onAgentClick}
+              agentActions={agentActions}
+              uiMessages={uiMessages}
+            />
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </SidebarInset2>
   );
 }

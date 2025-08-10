@@ -1,14 +1,22 @@
-import { mkdir, writeFile, readdir, stat, unlink } from "fs/promises";
+import { mkdir, writeFile, readdir, stat, unlink, readFile } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { fetchAndCompilePrompt } from "@/lib/langfuse";
+import {
+  extractDescription,
+  extractDescriptionSummary,
+  extractHtmlOnly,
+  extractName,
+} from "@/utils/extracts";
+import { TestCase } from "@/types/testcase";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
+  const id = randomUUID();
   try {
     const body = await req.json();
     console.log("body1", JSON.stringify(body, null, 2));
@@ -57,7 +65,8 @@ export async function POST(req: Request) {
         experimental_telemetry: { isEnabled: true },
         onFinish: async (result) => {
           // Extract and save HTML from the final result
-          await saveGeneratedHtml(result.text);
+          await saveGeneratedHtml(result.text, id);
+          await saveGeneratedTestCase(result.text, id);
         },
         providerOptions: {
           openai: {
@@ -84,7 +93,8 @@ export async function POST(req: Request) {
         experimental_telemetry: { isEnabled: true },
         onFinish: async (result) => {
           // Extract and save HTML from the final result
-          await saveGeneratedHtml(result.text);
+          await saveGeneratedHtml(result.text, id);
+          await saveGeneratedTestCase(result.text, id);
         },
         providerOptions: {
           openai: {
@@ -113,42 +123,11 @@ async function createSystemPrompt() {
   return await fetchAndCompilePrompt("generate-website-v2");
 }
 
-async function saveGeneratedHtml(text: string) {
+async function saveGeneratedHtml(text: string, id: string) {
   try {
-    // Clean up the HTML content
-    let cleanedText = text.trim();
-
-    // Remove markdown code blocks if present
-    cleanedText = cleanedText
-      .replace(/```html\s*/gi, "")
-      .replace(/```\s*$/g, "");
-    cleanedText = cleanedText.replace(/```[\s\S]*?```/g, "");
-
-    // Remove reasoning sections that might be wrapped in XML-like tags
-    cleanedText = cleanedText.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, "");
-    cleanedText = cleanedText.replace(/<think>[\s\S]*?<\/think>/gi, "");
-
-    // Remove any text before the DOCTYPE or HTML tag
-    const docTypeMatch = cleanedText.match(/(<!doctype html>[\s\S]*)/i);
-    if (docTypeMatch) {
-      cleanedText = docTypeMatch[1];
-    } else {
-      const htmlTagMatch = cleanedText.match(/(<html[\s\S]*)/i);
-      if (htmlTagMatch) {
-        cleanedText = htmlTagMatch[1];
-      }
-    }
-
-    // If the text contains both reasoning and HTML, try to extract just the HTML part
-    const htmlMatch = cleanedText.match(/<!doctype html>[\s\S]*?<\/html>/i);
-    if (htmlMatch) {
-      cleanedText = htmlMatch[0];
-    }
-
-    const htmlContent = cleanedText.trim();
+    const htmlContent = extractHtmlOnly(text);
 
     if (htmlContent) {
-      const id = randomUUID();
       const dir = path.join(process.cwd(), "public", "generated_websites");
       const filePath = path.join(dir, `${id}.html`);
 
@@ -162,6 +141,29 @@ async function saveGeneratedHtml(text: string) {
     console.error("Failed to save generated HTML:", error);
   }
   return null;
+}
+
+async function saveGeneratedTestCase(text: string, id: string) {
+  // Save the test cases to an file
+  const dir = path.join(process.cwd(), "public", "generated_test_cases");
+  const filePath = path.join(dir, `${id}.json`);
+  await mkdir(dir, { recursive: true });
+  await writeFile(filePath, text, "utf8");
+
+  const testCase: TestCase = {
+    id,
+    name: extractName(text),
+    description: extractDescription(text),
+    summary: extractDescriptionSummary(text),
+    html: text,
+    createdAt: new Date(),
+    pageUrl: `/generated_websites/${id}.html`,
+    startUrl: `/startTest?id=${id}`,
+  };
+
+  // Save the test case to the file
+  await writeFile(filePath, JSON.stringify(testCase, null, 2), "utf8");
+  console.log(`Generated test case saved to: /generated_test_cases/${id}.json`);
 }
 
 // Keep the existing GET and DELETE endpoints

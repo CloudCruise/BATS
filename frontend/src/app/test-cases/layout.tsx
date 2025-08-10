@@ -1,6 +1,4 @@
-import { SidebarProvider } from "@/components/ui/sidebar";
-import "./globals.css";
-import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarInset } from "@/components/ui/sidebar";
 
 export const metadata = {
   title: "BATS - Browser Agent Testing Suite",
@@ -19,15 +17,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>
-        <SidebarProvider className="flex min-h-screen flex-col">
-          <AppSidebar />
-          <main>
-            <div className="flex min-h-screen flex-col">{children}</div>
-          </main>
-        </SidebarProvider>
-      </body>
-    </html>
+    <SidebarInset>
+      <div className="flex min-h-screen flex-col">{children}</div>
+    </SidebarInset>
   );
 }
