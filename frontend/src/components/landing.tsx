@@ -13,6 +13,7 @@ import { ArrowUp } from "lucide-react";
 import { TestCase } from "@/types/testcase";
 import { TestCaseBubble } from "./test-case-bubble";
 import { SidebarInset } from "./sidebar-inset";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 
 type SavedSite = { id: string; title: string; url: string; createdAt: number };
 
@@ -56,7 +57,7 @@ export function Landing({
   const [difficulty, setDifficulty] = useState<string>("medium");
   const [websiteType, setWebsiteType] = useState<string>("generic");
   const [savedTestCases, setSavedTestCases] = useState<TestCase[]>([]);
-
+  const router = useRouter();
   const [placeholderPrompt, setPlaceholderPrompt] = useState("");
   const [currentExample, setCurrentExample] = useState(
     Math.floor(Math.random() * examplePrompts.length)
@@ -65,6 +66,8 @@ export function Landing({
     currentNumberOfExamplePromptCharactersShown,
     setCurrentNumberOfExamplePromptCharactersShown,
   ] = useState(0);
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
 
   useEffect(() => {
     async function loadTestCases() {
@@ -75,6 +78,12 @@ export function Landing({
     }
     loadTestCases();
   }, []);
+
+  useEffect(() => {
+    if (id) {
+      onOpenExisting(`/generated_websites/${id}.html`);
+    }
+  }, [id, onOpenExisting]);
 
   const handleGenerate = async () => {
     await onGenerate(prompt, difficulty, websiteType);
@@ -125,7 +134,7 @@ export function Landing({
             <div className="flex items-center justify-center gap-3 mb-4">
               <span className="text-6xl">🦇</span>
               <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
-                Introducing BATS
+                BATS: Browser Agent Testing System
               </h1>
               <span className="text-6xl">🦇</span>
             </div>
@@ -217,7 +226,9 @@ export function Landing({
                     <TestCaseBubble
                       key={testCase.id}
                       testCase={testCase}
-                      onOpenExisting={onOpenExisting}
+                      onOpenExisting={(pageUrl) => {
+                        router.push(`/test-cases/${testCase.id}`);
+                      }}
                     />
                   ))}
                 </div>
@@ -225,10 +236,10 @@ export function Landing({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onOpenExisting(savedTestCases[0].pageUrl)}
+                    onClick={() => router.push("/test-cases")}
                     className="mt-4 text-white/70 hover:text-white hover:bg-white/10 w-full"
                   >
-                    View all websites →
+                    View all test cases →
                   </Button>
                 )}
               </div>

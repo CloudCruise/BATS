@@ -12,6 +12,8 @@ import {
   WebPreviewNavigation,
   WebPreviewUrl,
 } from "@/components/web-preview";
+import { Button } from "@/components/ui/button";
+import { Bot } from "lucide-react";
 
 export default function TestCasePage({
   params,
@@ -35,7 +37,18 @@ export default function TestCasePage({
   return (
     <SidebarInset>
       <div className="flex w-full h-full flex-col gap-4 p-4 text-white">
-        <h1 className="text-2xl font-bold">Test Case</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Test Case</h1>
+          <Button
+            variant="outline"
+            onClick={() => {
+              window.open(`/?id=${id}`, "_blank");
+            }}
+          >
+            <Bot className="w-4 h-4 mr-2" />
+            Edit with Agent
+          </Button>
+        </div>
         <div className="grid grid-cols-12 gap-4 h-full">
           <div className="col-span-4">
             {testCase && <TestCaseInfo testCase={testCase} />}
