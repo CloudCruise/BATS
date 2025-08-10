@@ -32,10 +32,13 @@ export function AgentPanel({ currentUrl, agentRunning, onAgentToggle, actions = 
               <div className="p-4 space-y-3">
                 {uiMessages.map((message) => (
                   <div key={message.id}>
-                    <Reasoning defaultOpen={false} isStreaming={agentRunning}>
+                    <Reasoning defaultOpen={true} isStreaming={agentRunning}>
                       <ReasoningTrigger />
                       <ReasoningContent>
-                        {message.parts.map((p) => p.text).filter(Boolean).join('\n') || 'Thinking...'}
+                        {message.parts
+                          .map((p) => p.text)
+                          .filter((t) => t && !/^\s*HTML\s*$/i.test(t))
+                          .join('\n') || 'Thinking...'}
                       </ReasoningContent>
                     </Reasoning>
                   </div>
@@ -43,7 +46,7 @@ export function AgentPanel({ currentUrl, agentRunning, onAgentToggle, actions = 
                 {actions.map((action) => (
                   <div key={action.id}>
                     {action.type === 'reasoning' && (
-                      <Reasoning defaultOpen={false} isStreaming={action.state === 'running'}>
+                      <Reasoning defaultOpen={true} isStreaming={action.state === 'running'}>
                         <ReasoningTrigger />
                         <ReasoningContent>
                           {action.content || 'Thinking...'}

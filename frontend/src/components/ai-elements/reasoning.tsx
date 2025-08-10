@@ -190,7 +190,7 @@ export const ReasoningContent = memo(
       )}
       {...props}
     >
-      <div className="bg-muted/40 border rounded-md p-3 max-h-64 overflow-auto">
+      <div className="bg-muted/40 border rounded-md p-3 max-h-40 overflow-auto">
         <Response className="grid gap-2 whitespace-pre-wrap">{children}</Response>
       </div>
     </CollapsibleContent>
