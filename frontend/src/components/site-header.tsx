@@ -18,7 +18,14 @@ export function SiteHeader({ onGenerateNew, onToggleChat, isChatOpen }: SiteHead
         <span className="font-semibold">BATS</span>
       </div>
       <div className="flex items-center justify-center">
-        <Button variant="outline" size="sm" onClick={onGenerateNew}>Generate new website</Button>
+        <Button
+          variant="default"
+          size="sm"
+          className="bg-black text-white hover:bg-black/90"
+          onClick={onGenerateNew}
+        >
+          Generate new website
+        </Button>
       </div>
       <div className="flex items-center justify-end">
         {onToggleChat && (
