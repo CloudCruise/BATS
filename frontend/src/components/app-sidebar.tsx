@@ -23,6 +23,11 @@ const data = {
       url: "/test-cases",
       icon: <span>🧪</span>,
     },
+    {
+      title: "All Runs",
+      url: "/runs",
+      icon: <span>🏃</span>,
+    },
   ],
 };
 

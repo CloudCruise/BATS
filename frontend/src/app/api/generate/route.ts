@@ -7,6 +7,7 @@ import { fetchAndCompilePrompt } from "@/lib/langfuse";
 import {
   extractDescription,
   extractDescriptionSummary,
+  extractHtmlOnly,
   extractName,
 } from "@/utils/extracts";
 import { TestCase } from "@/types/testcase";
@@ -124,37 +125,7 @@ async function createSystemPrompt() {
 
 async function saveGeneratedHtml(text: string, id: string) {
   try {
-    // Clean up the HTML content
-    let cleanedText = text.trim();
-
-    // Remove markdown code blocks if present
-    cleanedText = cleanedText
-      .replace(/```html\s*/gi, "")
-      .replace(/```\s*$/g, "");
-    cleanedText = cleanedText.replace(/```[\s\S]*?```/g, "");
-
-    // Remove reasoning sections that might be wrapped in XML-like tags
-    cleanedText = cleanedText.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, "");
-    cleanedText = cleanedText.replace(/<think>[\s\S]*?<\/think>/gi, "");
-
-    // Remove any text before the DOCTYPE or HTML tag
-    const docTypeMatch = cleanedText.match(/(<!doctype html>[\s\S]*)/i);
-    if (docTypeMatch) {
-      cleanedText = docTypeMatch[1];
-    } else {
-      const htmlTagMatch = cleanedText.match(/(<html[\s\S]*)/i);
-      if (htmlTagMatch) {
-        cleanedText = htmlTagMatch[1];
-      }
-    }
-
-    // If the text contains both reasoning and HTML, try to extract just the HTML part
-    const htmlMatch = cleanedText.match(/<!doctype html>[\s\S]*?<\/html>/i);
-    if (htmlMatch) {
-      cleanedText = htmlMatch[0];
-    }
-
-    const htmlContent = cleanedText.trim();
+    const htmlContent = extractHtmlOnly(text);
 
     if (htmlContent) {
       const dir = path.join(process.cwd(), "public", "generated_websites");

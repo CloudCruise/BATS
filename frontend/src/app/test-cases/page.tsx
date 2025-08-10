@@ -29,13 +29,15 @@ export default function TestCasesPage() {
           </div>
         ) : (
           <div className="flex w-full flex-col gap-2">
-            {testCases.map((testCase) => (
-              <TestCaseBubble
-                key={testCase.id}
-                testCase={testCase}
-                backgroundTransparent={false}
-              />
-            ))}
+            {testCases
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((testCase) => (
+                <TestCaseBubble
+                  key={testCase.id}
+                  testCase={testCase}
+                  backgroundTransparent={false}
+                />
+              ))}
           </div>
         )}
       </div>
