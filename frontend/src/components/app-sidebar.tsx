@@ -65,23 +65,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <Header />
       </SidebarHeader>
       <SidebarContent>
-        {/* We create a SidebarGroup for each parent. */}
-        {data.navMain.map((item) => (
-          <SidebarGroup key={item.title}>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <a href={item.url}>
-                    <SidebarMenuButton tooltip={item.title}>
-                      {item.icon && item.icon}
-                      <span>{item.title}</span>
-                    </SidebarMenuButton>
-                  </a>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        <SidebarGroup>
+          {/* We create a SidebarGroup for each parent. */}
+          {data.navMain.map((item) => (
+            <SidebarMenu key={item.title}>
+              <SidebarMenuItem>
+                <a href={item.url}>
+                  <SidebarMenuButton tooltip={item.title}>
+                    {item.icon && item.icon}
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </a>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          ))}
+        </SidebarGroup>
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
