@@ -6,7 +6,10 @@ export function SidebarInset({ children }: { children: React.ReactNode }) {
   const { open } = useSidebar();
   return (
     <div
-      className={cn("transition-all duration-200", open ? "ml-64" : "ml-16")}
+      className={cn(
+        "transition-all duration-200 h-screen",
+        open ? "ml-64" : "ml-16"
+      )}
     >
       {children}
     </div>
